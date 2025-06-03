@@ -5,10 +5,13 @@
 //  Created by mike liu on 2025/6/2.
 //
 
-// MARK: - Stage 1: Property直接傳遞 DataService
+// MARK: - Stage 1: Property直接傳遞 DataService (Badge增強版)
 class Stage1_PropertyDataService: TodoDataServiceProtocol {
     // 簡單的記憶體存儲
     private var todos: [Todo] = []
+    
+    // 🎯 Badge支援（但Stage1不會更新Badge - 展示限制）
+    private var badgeUpdateCallback: BadgeUpdateCallback?
     
     init() {
         // 初始化一些測試資料
@@ -27,6 +30,10 @@ class Stage1_PropertyDataService: TodoDataServiceProtocol {
     func addTodo(_ todo: Todo) {
         todos.append(todo)
         print("✅ Stage1: 新增Todo - \(todo.title)")
+        
+        // 🎯 Stage1限制：不會自動更新Badge
+        // 這展示了Stage1無法自動同步的特性
+        print("🔴 Stage1限制: Badge不會自動更新（需手動刷新）")
     }
     
     func deleteTodo(by uuid: String) {
@@ -48,5 +55,22 @@ class Stage1_PropertyDataService: TodoDataServiceProtocol {
     
     func cleanup() {
         print("🧹 Stage1: 清理資源")
+        badgeUpdateCallback = nil
+    }
+    
+    // MARK: - Badge Protocol Implementation (Stage1空實作)
+    
+    func setBadgeUpdateCallback(_ callback: @escaping (Int) -> Void) {
+        self.badgeUpdateCallback = callback
+        print("🔴 Stage1: Badge回調已設置（但不會主動更新）")
+        
+        // Stage1特性：不會主動更新Badge
+        // 這讓用戶感受到Stage1的限制
+        callback(0) // 始終保持0
+    }
+    
+    func clearBadge() {
+        print("🔴 Stage1: 清除Badge（無效果，因為本來就不更新）")
+        // Stage1不處理Badge，所以清除也無效果
     }
 }

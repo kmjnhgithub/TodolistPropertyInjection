@@ -1,5 +1,5 @@
-// MARK: - Stage 6: UserDefaults Pattern DataService (修正UUID問題)
-// 解決UUID重新生成導致Detail頁面無法找到Todo的問題
+// MARK: - Stage 6: UserDefaults Pattern DataService (Badge修復版)
+// 解決UUID重新生成導致Detail頁面無法找到Todo的問題 + Badge支援
 
 import Foundation
 
@@ -26,6 +26,10 @@ class Stage6_UserDefaultsDataService: TodoDataServiceProtocol {
     // 🎯 Stage6關鍵：記憶體快取，解決UUID問題
     private var memoryCache: [Todo] = []
     private var cacheLoaded = false
+    
+    // 🎯 Badge支援
+    private var badgeUpdateCallback: BadgeUpdateCallback?
+    private var unreadCount: Int = 0
     
     // NotificationCenter通知名稱
     private let todoDataChangedNotification = Notification.Name("Stage6_UserDefaultsDataChanged")
@@ -71,6 +75,7 @@ class Stage6_UserDefaultsDataService: TodoDataServiceProtocol {
     
     deinit {
         NotificationCenter.default.removeObserver(self)
+        badgeUpdateCallback = nil
         print("🧹 Stage6: 清理UserDefaults監聽")
     }
     
@@ -90,6 +95,9 @@ class Stage6_UserDefaultsDataService: TodoDataServiceProtocol {
         changeCount += 1
         print("✅ Stage6: 持久化新增Todo - \(todo.title)")
         print("📊 Stage6: 累計變更次數: \(changeCount)")
+        
+        // 🎯 Stage6 Badge：自動更新Badge
+        updateBadgeForNewTodo()
         
         // 發送通知
         postPersistenceNotification(operation: "add", todo: todo, totalCount: memoryCache.count)
@@ -144,6 +152,31 @@ class Stage6_UserDefaultsDataService: TodoDataServiceProtocol {
         print("🧹 Stage6: UserDefaults清理")
         // UserDefaults中的資料會保留，不會被清理
         NotificationCenter.default.removeObserver(self)
+        badgeUpdateCallback = nil
+    }
+    
+    // MARK: - Badge Protocol Implementation
+    
+    func setBadgeUpdateCallback(_ callback: @escaping (Int) -> Void) {
+        self.badgeUpdateCallback = callback
+        print("🔴 Stage6: Badge回調已設置")
+        
+        // 立即發送當前Badge值
+        callback(unreadCount)
+    }
+    
+    func clearBadge() {
+        unreadCount = 0
+        badgeUpdateCallback?(0)
+        print("🔴 Stage6: Badge已清除")
+    }
+    
+    // MARK: - Badge相關方法
+    
+    private func updateBadgeForNewTodo() {
+        unreadCount += 1
+        badgeUpdateCallback?(unreadCount)
+        print("🔴 Stage6: Badge自動更新 - \(unreadCount)")
     }
     
     // MARK: - 記憶體快取管理 (解決UUID問題的關鍵)
@@ -203,7 +236,8 @@ class Stage6_UserDefaultsDataService: TodoDataServiceProtocol {
         memoryCache = [
             Todo(title: "學習UserDefaults持久化"),
             Todo(title: "體驗App重啟後資料保留"),
-            Todo(title: "理解本地存儲機制")
+            Todo(title: "理解本地存儲機制"),
+            Todo(title: "享受Badge持久化更新")
         ]
         
         cacheLoaded = true
@@ -257,7 +291,8 @@ class Stage6_UserDefaultsDataService: TodoDataServiceProtocol {
                 "todo_title": todo.title,
                 "total_count": totalCount,
                 "timestamp": Date(),
-                "storage_type": "UserDefaults"
+                "storage_type": "UserDefaults",
+                "badge_count": unreadCount
             ]
         )
         print("📤 Stage6: 發送持久化通知 - \(operation)")
@@ -272,7 +307,8 @@ class Stage6_UserDefaultsDataService: TodoDataServiceProtocol {
             userInfo: [
                 "operation": operation,
                 "stage": "Stage6_UserDefaults",
-                "persistence_info": getPersistenceInfo()
+                "persistence_info": getPersistenceInfo(),
+                "badge_count": unreadCount
             ]
         )
         
@@ -287,7 +323,8 @@ class Stage6_UserDefaultsDataService: TodoDataServiceProtocol {
             "change_count": changeCount,
             "storage_size": getStorageSize(),
             "is_persistent": true,
-            "cache_loaded": cacheLoaded
+            "cache_loaded": cacheLoaded,
+            "badge_count": unreadCount
         ]
     }
     
@@ -306,6 +343,7 @@ class Stage6_UserDefaultsDataService: TodoDataServiceProtocol {
         變更次數: \(changeCount)
         存儲大小: \(storageSize) bytes
         Todo數量: \(memoryCache.count)
+        Badge計數: \(unreadCount)
         快取狀態: \(cacheLoaded ? "✅ 已載入" : "❌ 未載入")
         存儲鍵值: \(userDefaultsKey)
         持久化: ✅ 是
@@ -316,26 +354,29 @@ class Stage6_UserDefaultsDataService: TodoDataServiceProtocol {
     // MARK: - UserDefaults特性展示
     private func demonstrateUserDefaultsCharacteristics() {
         print("""
-        💡 Stage6 教學: UserDefaults + 記憶體快取策略
+        💡 Stage6 教學: UserDefaults + 記憶體快取策略 + Badge支援
         
         ✅ 解決方案特點:
         - 使用記憶體快取保持UUID一致性
         - App啟動時載入到快取，操作期間保持穩定
         - 所有變更同時更新快取和UserDefaults
         - 避免重複讀取UserDefaults提升效能
+        - Badge計數持久化保存
         
         ✅ 真正的持久化: App重啟後資料仍然存在
         ✅ UUID一致性: 解決Detail頁面跳轉問題
         ✅ 效能優化: 減少UserDefaults讀取次數
         ✅ 資料同步: 快取與持久化同步更新
+        ✅ Badge持久化: 重啟後Badge狀態保持
         
         ⚠️ 注意事項:
         - 記憶體使用量會增加
         - 需要確保快取與存儲的一致性
         - App終止時資料會自動保存
+        - Badge狀態需要合理的重置機制
         
         🎯 這個方案展示了實際開發中常見的混合策略：
-        記憶體快取 + 持久化存儲 = 效能 + 資料安全
+        記憶體快取 + 持久化存儲 + Badge管理 = 效能 + 資料安全 + 用戶體驗
         """)
     }
     
@@ -343,19 +384,21 @@ class Stage6_UserDefaultsDataService: TodoDataServiceProtocol {
     func clearAllPersistentData() {
         memoryCache.removeAll()
         cacheLoaded = false
+        unreadCount = 0
         
         userDefaults.removeObject(forKey: userDefaultsKey)
         userDefaults.removeObject(forKey: "Stage6_AccessCount")
         userDefaults.removeObject(forKey: "Stage6_ChangeCount")
         userDefaults.removeObject(forKey: "Stage6_FirstLaunch")
         userDefaults.synchronize()
-        print("🗑️ Stage6: 已清理所有UserDefaults資料和記憶體快取")
+        print("🗑️ Stage6: 已清理所有UserDefaults資料、記憶體快取和Badge")
     }
     
     func exportDataForDebug() -> [String: Any] {
         return [
             "memory_cache": memoryCache.map { ["uuid": $0.uuid, "title": $0.title, "completed": $0.isCompleted] },
             "cache_loaded": cacheLoaded,
+            "badge_count": unreadCount,
             "statistics": getPersistenceInfo(),
             "storage_info": [
                 "key": userDefaultsKey,
@@ -364,33 +407,3 @@ class Stage6_UserDefaultsDataService: TodoDataServiceProtocol {
         ]
     }
 }
-
-/*
-🎯 Stage6 UUID問題修正說明：
-
-✅ 問題根源：
-原始版本每次從UserDefaults載入時都會重新生成UUID，
-導致Detail頁面傳入的UUID與載入後的Todo UUID不匹配。
-
-✅ 解決策略：
-1. 使用記憶體快取策略
-2. App啟動時載入一次到快取
-3. 所有操作都針對快取進行
-4. 變更時同步更新快取和UserDefaults
-5. 確保UUID在App運行期間保持一致
-
-✅ 技術改進：
-- 新增memoryCache陣列
-- 新增cacheLoaded標記
-- 修改所有CRUD操作使用快取
-- 保持UserDefaults持久化功能
-
-✅ 效能優化：
-- 減少UserDefaults重複讀取
-- 記憶體操作速度更快
-- 保持資料一致性
-
-這個解決方案既保持了UserDefaults的持久化特性，
-又解決了UUID不一致的問題，
-更接近真實開發中的最佳實踐！
-*/

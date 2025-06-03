@@ -6,7 +6,7 @@
 //
 import UIKit
 
-// MARK: - AddTodo ViewController
+// MARK: - AddTodo ViewController (移除Alert版)
 class AddTodoViewController: UIViewController {
     private var viewModel: AddTodoViewModel!
     
@@ -88,20 +88,9 @@ class AddTodoViewController: UIViewController {
         addButton.alpha = 0.5
         contentView.addSubview(addButton)
         
-        // 說明文字
+        // 說明文字 - 動態顯示當前Stage資訊
         instructionLabel.translatesAutoresizingMaskIntoConstraints = false
-        instructionLabel.text = """
-        🎯 Stage1: Property直接傳遞
-        
-        特點：
-        • 簡單直接的資料傳遞方式
-        • 新增後需要手動切換到Todo清單才能看到結果
-        • 無法即時同步到其他頁面
-        
-        限制：
-        • Tab間無法自動同步資料
-        • 需要手動刷新UI來更新顯示
-        """
+        instructionLabel.text = getCurrentStageInstruction()
         instructionLabel.font = .systemFont(ofSize: 14)
         instructionLabel.textColor = .systemGray
         instructionLabel.numberOfLines = 0
@@ -133,7 +122,7 @@ class AddTodoViewController: UIViewController {
     
     private func setupNavigationBar() {
         navigationItem.rightBarButtonItem = UIBarButtonItem(
-            title: "Stage1",
+            title: getCurrentStageName(),
             style: .plain,
             target: nil,
             action: nil
@@ -186,22 +175,141 @@ class AddTodoViewController: UIViewController {
         textFieldDidChange()
         textField.resignFirstResponder()
         
-        // 🎯 Stage1限制：顯示提示訊息，因為無法自動同步到Tab1
-        showAddSuccessAlert()
+        // 🎯 新設計：移除Alert，讓用戶純粹體驗各階段差異
+        // Stage1-3: 用戶會發現沒有即時反饋
+        // Stage4+: 用戶會驚喜發現Badge立即更新
+        // Stage7: 用戶會體驗到完全流暢的響應式更新
+        
+        print("✅ Todo新增完成，體驗不同Stage的同步效果")
     }
     
-    private func showAddSuccessAlert() {
-        let alert = UIAlertController(
-            title: "✅ 新增成功",
-            message: "Stage1限制：請手動切換到「Todo清單」頁面查看新增的項目",
-            preferredStyle: .alert
-        )
+    // MARK: - 動態Stage資訊
+    
+    private func getCurrentStageName() -> String {
+        let dataService = ServiceContainer.shared.getDataService()
         
-        alert.addAction(UIAlertAction(title: "知道了", style: .default))
-        alert.addAction(UIAlertAction(title: "切換到Todo清單", style: .default) { [weak self] _ in
-            self?.tabBarController?.selectedIndex = 0
-        })
+        if dataService is Stage1_PropertyDataService {
+            return "Stage1"
+        } else if dataService is Stage2_DelegateDataService {
+            return "Stage2"
+        } else if dataService is Stage3_ClosureDataService {
+            return "Stage3"
+        } else if dataService is Stage4_NotificationDataService {
+            return "Stage4"
+        } else if dataService is Stage5_SingletonDataService {
+            return "Stage5"
+        } else if dataService is Stage6_UserDefaultsDataService {
+            return "Stage6"
+        } else if dataService is Stage7_CombineDataService {
+            return "Stage7"
+        } else {
+            return "Unknown"
+        }
+    }
+    
+    private func getCurrentStageInstruction() -> String {
+        let dataService = ServiceContainer.shared.getDataService()
         
-        present(alert, animated: true)
+        if dataService is Stage1_PropertyDataService {
+            return """
+            🎯 Stage1: Property直接傳遞
+            
+            特點：
+            • 簡單直接的資料傳遞方式
+            • 新增後需要手動切換到Todo清單才能看到結果
+            • 無法即時同步到其他頁面
+            • Badge不會自動更新
+            
+            體驗重點：
+            • 感受手動同步的不便
+            • 觀察Badge始終為0的限制
+            """
+        } else if dataService is Stage2_DelegateDataService {
+            return """
+            🎯 Stage2: Delegate委託模式
+            
+            特點：
+            • 展示一對一委託關係概念
+            • 仍無法實現真正的UI自動更新
+            • Badge依然不會自動更新
+            
+            體驗重點：
+            • 理解委託模式的基本概念
+            • 感受純DataService層通訊的限制
+            """
+        } else if dataService is Stage3_ClosureDataService {
+            return """
+            🎯 Stage3: Closure回調機制
+            
+            特點：
+            • 展示回調函數的使用方式
+            • 學習記憶體管理重要性
+            • Badge仍無法自動更新
+            
+            體驗重點：
+            • 理解Closure的語法和概念
+            • 觀察weak self的安全性
+            """
+        } else if dataService is Stage4_NotificationDataService {
+            return """
+            🎯 Stage4: NotificationCenter通知
+            
+            特點：
+            • 第一個實現真正UI自動更新的階段
+            • 跨層級通訊能力
+            • Badge開始有反應！
+            
+            體驗重點：
+            • 感受自動同步的驚喜
+            • 觀察Badge的即時更新
+            """
+        } else if dataService is Stage5_SingletonDataService {
+            return """
+            🎯 Stage5: Singleton全域狀態
+            
+            特點：
+            • 全域唯一實例管理
+            • 狀態在App生命週期內持續存在
+            • Badge自動更新
+            
+            體驗重點：
+            • 理解全域狀態管理
+            • 觀察持久的記憶體狀態
+            """
+        } else if dataService is Stage6_UserDefaultsDataService {
+            return """
+            🎯 Stage6: UserDefaults持久化
+            
+            特點：
+            • App重啟後資料仍然存在
+            • 記憶體快取 + 持久化存儲
+            • Badge自動更新
+            
+            體驗重點：
+            • 感受真正的資料持久化
+            • 重啟App後資料不丟失
+            """
+        } else if dataService is Stage7_CombineDataService {
+            return """
+            🎯 Stage7: Combine響應式框架
+            
+            特點：
+            • 現代化響應式程式設計
+            • 聲明式資料流管理
+            • 完美的自動記憶體管理
+            • 最流暢的Badge響應式更新
+            
+            體驗重點：
+            • 感受響應式的優雅和流暢
+            • 觀察即時的Badge動畫效果
+            • 體驗現代iOS開發的威力
+            """
+        } else {
+            return """
+            🎯 Unknown Stage
+            
+            請確認ServiceContainer中的DataService設定
+            """
+        }
     }
 }

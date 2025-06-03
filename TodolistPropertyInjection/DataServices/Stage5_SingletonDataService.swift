@@ -5,7 +5,7 @@
 //  Created by mike liu on 2025/6/3.
 //
 
-// MARK: - Stage 5: Singleton Pattern DataService
+// MARK: - Stage 5: Singleton Pattern DataService (Badge修復版)
 // 完全不修改任何其他程式碼，所有邏輯都在DataService內部
 // 🎯 展示全域狀態管理和Singleton模式的特點
 
@@ -23,7 +23,8 @@ class Stage5_SingletonDataService: TodoDataServiceProtocol {
         todos = [
             Todo(title: "學習Singleton Pattern"),
             Todo(title: "理解全域狀態管理"),
-            Todo(title: "體驗記憶體常駐特性")
+            Todo(title: "體驗記憶體常駐特性"),
+            Todo(title: "享受Badge即時更新")
         ]
         print("🎯 Stage5: Singleton Pattern - 已初始化 (全域唯一實例)")
         
@@ -40,6 +41,10 @@ class Stage5_SingletonDataService: TodoDataServiceProtocol {
     private var accessCount: Int = 0
     private var dataChangeCount: Int = 0
     
+    // 🎯 Badge支援
+    private var badgeUpdateCallback: BadgeUpdateCallback?
+    private var unreadCount: Int = 0
+    
     // NotificationCenter通知名稱
     private let todoDataChangedNotification = Notification.Name("Stage5_SingletonDataChanged")
     
@@ -55,6 +60,9 @@ class Stage5_SingletonDataService: TodoDataServiceProtocol {
         dataChangeCount += 1
         print("✅ Stage5: 全域狀態新增Todo - \(todo.title)")
         print("📊 Stage5: 累計資料變更次數: \(dataChangeCount)")
+        
+        // 🎯 Stage5 Badge：自動更新Badge
+        updateBadgeForNewTodo()
         
         // 發送通知
         postGlobalNotification(operation: "add", todo: todo)
@@ -101,6 +109,31 @@ class Stage5_SingletonDataService: TodoDataServiceProtocol {
         print("🧹 Stage5: Singleton清理 (但實例仍然常駐記憶體)")
         // 注意：Singleton的實例不會被釋放
         NotificationCenter.default.removeObserver(self)
+        badgeUpdateCallback = nil
+    }
+    
+    // MARK: - Badge Protocol Implementation
+    
+    func setBadgeUpdateCallback(_ callback: @escaping (Int) -> Void) {
+        self.badgeUpdateCallback = callback
+        print("🔴 Stage5: Badge回調已設置")
+        
+        // 立即發送當前Badge值
+        callback(unreadCount)
+    }
+    
+    func clearBadge() {
+        unreadCount = 0
+        badgeUpdateCallback?(0)
+        print("🔴 Stage5: Badge已清除")
+    }
+    
+    // MARK: - Badge相關方法
+    
+    private func updateBadgeForNewTodo() {
+        unreadCount += 1
+        badgeUpdateCallback?(unreadCount)
+        print("🔴 Stage5: Badge自動更新 - \(unreadCount)")
     }
     
     // MARK: - Singleton特性展示
@@ -113,6 +146,7 @@ class Stage5_SingletonDataService: TodoDataServiceProtocol {
         ✅ 記憶體常駐: 實例會一直存在直到App結束
         ✅ 全域存取: 任何地方都可以存取 .shared
         ✅ 狀態持久: 資料在App生命週期內持續存在
+        ✅ Badge支援: 自動更新Badge計數
         
         ⚠️ Singleton的風險:
         - 全域狀態難以測試
@@ -158,7 +192,8 @@ class Stage5_SingletonDataService: TodoDataServiceProtocol {
                 "timestamp": Date(),
                 "singleton_id": ObjectIdentifier(self),
                 "access_count": accessCount,
-                "change_count": dataChangeCount
+                "change_count": dataChangeCount,
+                "badge_count": unreadCount
             ]
         )
         print("📤 Stage5: 發送全域狀態變更通知 - \(operation)")
@@ -174,7 +209,8 @@ class Stage5_SingletonDataService: TodoDataServiceProtocol {
                 "operation": operation,
                 "count": todos.count,
                 "stage": "Stage5_Singleton",
-                "singleton_info": getSingletonInfo()
+                "singleton_info": getSingletonInfo(),
+                "badge_count": unreadCount
             ]
         )
         
@@ -188,7 +224,8 @@ class Stage5_SingletonDataService: TodoDataServiceProtocol {
             "access_count": accessCount,
             "change_count": dataChangeCount,
             "memory_address": String(describing: Unmanaged.passUnretained(self).toOpaque()),
-            "todo_count": todos.count
+            "todo_count": todos.count,
+            "badge_count": unreadCount
         ]
     }
     
@@ -200,6 +237,7 @@ class Stage5_SingletonDataService: TodoDataServiceProtocol {
         存取次數: \(accessCount)
         變更次數: \(dataChangeCount)
         Todo總數: \(todos.count)
+        Badge計數: \(unreadCount)
         記憶體位址: \(String(describing: Unmanaged.passUnretained(self).toOpaque()))
         實例ID: \(ObjectIdentifier(self))
         ================================
@@ -252,6 +290,7 @@ class Stage5_SingletonDataService: TodoDataServiceProtocol {
         - 快取管理 (Cache Manager)
         - 網路管理 (Network Manager)
         - 資料庫連接池
+        - Badge計數管理
         
         ❌ 不適合的場景:
         - 業務資料模型 (容易造成全域污染)
@@ -262,49 +301,8 @@ class Stage5_SingletonDataService: TodoDataServiceProtocol {
         🎯 Stage5的教學目的:
         展示Singleton在資料管理中的特點，
         理解全域狀態的優缺點，
+        體驗Badge自動更新的便利性，
         為後續更好的架構設計做準備。
         """)
     }
 }
-
-/*
-🎯 Stage5 設計說明：
-
-✅ Singleton Pattern的特點：
-1. 全域唯一實例
-2. 延遲初始化
-3. 記憶體常駐
-4. 全域存取點
-5. 狀態持久性
-
-✅ 這個階段展示什麼：
-1. 全域狀態管理的概念
-2. Singleton的實作方式
-3. 記憶體持久性特性
-4. 多執行緒安全考量
-5. 適用場景分析
-
-❌ Singleton的問題：
-1. 全域狀態難以測試
-2. 違反依賴注入原則
-3. 緊耦合設計
-4. 記憶體無法釋放
-5. 隱藏依賴關係
-
-🧪 測試重點：
-1. 體驗全域狀態的持久性
-2. 觀察統計資訊的累積
-3. 理解記憶體常駐特性
-4. 感受全域存取的便利性
-
-💡 學習價值：
-雖然Singleton有很多問題，但理解它的特性
-有助於：
-- 理解全域狀態管理
-- 認識設計模式的權衡
-- 為更好的架構設計做準備
-- 理解框架中的Singleton使用
-
-下一階段預告：
-Stage6將展示UserDefaults的持久化能力！
-*/

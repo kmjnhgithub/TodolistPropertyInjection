@@ -5,15 +5,19 @@
 //  Created by mike liu on 2025/6/3.
 //
 
-// MARK: - Stage 4: NotificationCenter Pattern DataService
+// MARK: - Stage 4: NotificationCenter Pattern DataService (Badge增強版)
 // 完全不修改任何其他程式碼，所有邏輯都在DataService內部
-// 🎯 這是第一個能真正實現UI自動更新的階段！
+// 🎯 這是第一個能真正實現UI自動更新的階段！現在還支援Badge！
 
 import Foundation
 
 class Stage4_NotificationDataService: TodoDataServiceProtocol {
     // 簡單的記憶體存儲
     private var todos: [Todo] = []
+    
+    // 🎯 Badge支援
+    private var badgeUpdateCallback: BadgeUpdateCallback?
+    private var unreadCount: Int = 0
     
     // 🎯 Stage4核心：NotificationCenter通知名稱定義
     private let todoDataChangedNotification = Notification.Name("Stage4_TodoDataChanged")
@@ -26,7 +30,8 @@ class Stage4_NotificationDataService: TodoDataServiceProtocol {
         todos = [
             Todo(title: "學習NotificationCenter"),
             Todo(title: "實現真正的UI自動更新"),
-            Todo(title: "體驗一對多通訊")
+            Todo(title: "體驗一對多通訊"),
+            Todo(title: "享受Badge即時更新")
         ]
         print("🎯 Stage4: NotificationCenter Pattern - 已初始化")
         
@@ -52,6 +57,9 @@ class Stage4_NotificationDataService: TodoDataServiceProtocol {
         // 🎯 Stage4核心：發送NotificationCenter通知
         postNotification(name: todoAddedNotification, userInfo: ["todo": todo, "operation": "add"])
         postNotification(name: todoDataChangedNotification, userInfo: ["operation": "add", "count": todos.count])
+        
+        // 🎯 Stage4 Badge：自動更新Badge
+        updateBadgeForNewTodo()
     }
     
     func deleteTodo(by uuid: String) {
@@ -92,6 +100,23 @@ class Stage4_NotificationDataService: TodoDataServiceProtocol {
     func cleanup() {
         print("🧹 Stage4: 清理NotificationCenter資源")
         NotificationCenter.default.removeObserver(self)
+        badgeUpdateCallback = nil
+    }
+    
+    // MARK: - Badge Protocol Implementation
+    
+    func setBadgeUpdateCallback(_ callback: @escaping (Int) -> Void) {
+        self.badgeUpdateCallback = callback
+        print("🔴 Stage4: Badge回調已設置")
+        
+        // 立即發送當前Badge值
+        callback(unreadCount)
+    }
+    
+    func clearBadge() {
+        unreadCount = 0
+        badgeUpdateCallback?(0)
+        print("🔴 Stage4: Badge已清除")
     }
     
     // MARK: - NotificationCenter 核心邏輯
@@ -147,12 +172,21 @@ class Stage4_NotificationDataService: TodoDataServiceProtocol {
                 "operation": operation,
                 "count": count,
                 "timestamp": Date(),
-                "stage": "Stage4_NotificationCenter"
+                "stage": "Stage4_NotificationCenter",
+                "badge_count": unreadCount
             ]
         )
         
         print("🎨 Stage4: 發送UI更新通知 - \(operation)")
         print("💡 Stage4: ViewController的viewWillAppear將自動處理更新")
+    }
+    
+    // MARK: - Badge相關方法
+    
+    private func updateBadgeForNewTodo() {
+        unreadCount += 1
+        badgeUpdateCallback?(unreadCount)
+        print("🔴 Stage4: Badge自動更新 - \(unreadCount)")
     }
     
     // MARK: - NotificationCenter 示範不同用法
@@ -188,6 +222,7 @@ class Stage4_NotificationDataService: TodoDataServiceProtocol {
         ✅ 跨層級通訊: 可以跨越ViewController、ViewModel、Service層
         ✅ 動態監聽: 可以隨時新增或移除監聽者
         ✅ 攜帶資料: 可以透過userInfo傳遞複雜資料
+        ✅ Badge支援: 實現即時Badge更新
         
         ⚠️ 注意事項:
         - 記得在deinit中移除監聽 (removeObserver)
@@ -197,43 +232,12 @@ class Stage4_NotificationDataService: TodoDataServiceProtocol {
         
         🎯 Stage4的創新:
         利用既有的viewWillAppear機制來實現UI自動更新，
+        現在還加上了Badge即時反饋，
         而不需要修改任何ViewController的程式碼！
+        
+        🔴 Badge特色:
+        Stage4是第一個支援Badge自動更新的階段，
+        讓用戶明顯感受到自動同步的威力！
         """)
     }
 }
-
-/*
-🎯 Stage4 設計說明：
-
-✅ 這個階段的突破性改進：
-1. 真正實現UI自動更新
-2. 解決Tab間同步問題
-3. 一對多通訊機制
-4. 跨層級的資料通知
-
-✅ 為什麼Stage4能實現UI更新：
-1. NotificationCenter是iOS系統級的通訊機制
-2. 可以跨越任何層級進行通訊
-3. 利用既有的viewWillAppear刷新機制
-4. 不需要修改ViewController程式碼
-
-🎯 實際效果：
-- Detail頁面刪除 → 自動通知 → List頁面自動更新
-- Tab2新增Todo → 自動通知 → Tab1自動同步
-- 任何資料變更都會自動同步到所有相關頁面
-
-❌ Stage4的限制：
-- 弱型別，容易出錯
-- 通知名稱可能衝突
-- 難以追蹤複雜的通知流向
-- 需要手動管理監聽者的生命週期
-
-🧪 測試重點：
-1. Tab2新增Todo後，Tab1立即可見
-2. Detail頁面刪除後，List自動更新
-3. 觀察Console中豐富的通知日誌
-4. 體驗真正的自動同步效果
-
-這是學習路程中的重要里程碑：
-第一個真正實現自動UI更新的階段！
-*/

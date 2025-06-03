@@ -5,7 +5,7 @@
 //  Created by mike liu on 2025/6/3.
 //
 
-// MARK: - Stage 3: 純Closure Pattern DataService
+// MARK: - Stage 3: 純Closure Pattern DataService (Badge修復版)
 // 完全不修改任何其他程式碼，包括不擴展TodoListViewModel
 
 import Foundation
@@ -16,6 +16,9 @@ class Stage3_ClosureDataService: TodoDataServiceProtocol {
     
     // 🎯 Stage3核心：Closure回調機制 (但不依賴外部類別的擴展)
     private var onDataChanged: (() -> Void)?
+    
+    // 🎯 Badge支援（但Stage3不會更新Badge - 展示限制）
+    private var badgeUpdateCallback: BadgeUpdateCallback?
     
     init() {
         // 初始化測試資料
@@ -35,6 +38,10 @@ class Stage3_ClosureDataService: TodoDataServiceProtocol {
     func addTodo(_ todo: Todo) {
         todos.append(todo)
         print("✅ Stage3: 新增Todo - \(todo.title)")
+        
+        // 🎯 Stage3限制：不會自動更新Badge
+        // 這展示了Stage3無法自動同步的特性
+        print("🔴 Stage3限制: Badge不會自動更新（需手動刷新）")
         
         // 🎯 Stage3核心：觸發Closure回調
         triggerDataChangeCallback(operation: "新增", todo: todo)
@@ -77,6 +84,23 @@ class Stage3_ClosureDataService: TodoDataServiceProtocol {
         print("🧹 Stage3: 清理Closure資源")
         // 🎯 Stage3重要：避免記憶體洩漏
         onDataChanged = nil
+        badgeUpdateCallback = nil
+    }
+    
+    // MARK: - Badge Protocol Implementation (Stage3空實作)
+    
+    func setBadgeUpdateCallback(_ callback: @escaping (Int) -> Void) {
+        self.badgeUpdateCallback = callback
+        print("🔴 Stage3: Badge回調已設置（但不會主動更新）")
+        
+        // Stage3特性：不會主動更新Badge
+        // 這讓用戶感受到Stage3的限制
+        callback(0) // 始終保持0
+    }
+    
+    func clearBadge() {
+        print("🔴 Stage3: 清除Badge（無效果，因為本來就不更新）")
+        // Stage3不處理Badge，所以清除也無效果
     }
     
     // MARK: - 私有方法：Closure回調機制
@@ -157,28 +181,60 @@ class Stage3_ClosureDataService: TodoDataServiceProtocol {
         
         print("💡 Stage3: 記得在Closure中使用 [weak self] 來避免強引用循環")
     }
+    
+    // MARK: - 展示Badge限制的教學價值
+    private func demonstrateBadgeLimitations() {
+        print("""
+        💡 Stage3 教學: Badge功能限制分析
+        
+        ❌ Stage3的Badge限制:
+        - 無法自動更新Badge計數
+        - 新增Todo後Badge保持0
+        - 用戶必須手動檢查是否有新內容
+        - 展示了純Closure無法解決UI同步問題
+        
+        🔄 與其他階段對比:
+        - Stage1: 無Badge概念
+        - Stage2: 有Badge接口但不實作  
+        - Stage3: 有Badge接口但不實作
+        - Stage4: 第一個支援Badge自動更新的階段
+        
+        🎯 學習價值:
+        這種限制讓學習者深刻體會到：
+        1. 純DataService層的通訊限制
+        2. 為什麼需要跨層級的通訊機制
+        3. Stage4的NotificationCenter突破的價值
+        4. 響應式程式設計的必要性
+        
+        💡 真實應用場景:
+        雖然Stage3無法處理Badge，但Closure在真實開發中：
+        - 網路請求完成回調
+        - 動畫執行完成通知
+        - 按鈕點擊事件處理
+        - 異步操作結果回傳
+        """)
+    }
 }
 
 /*
-🎯 Stage3 設計說明：
+🎯 Stage3 Badge修復說明：
 
-✅ 為什麼不使用Extension：
-1. 保持「只新增DataService」的原則
-2. 避免修改其他類別的行為
-3. 展示純粹的Closure概念
-4. 符合單一職責原則
+✅ 新增Badge Protocol實作：
+1. setBadgeUpdateCallback - 設置但不主動調用
+2. clearBadge - 空實作，展示限制
+3. Badge始終保持0，突出Stage3的限制
 
 ✅ 這個設計的學習價值：
 1. 展示Closure的基本概念和語法
 2. 示範記憶體管理的重要性 ([weak self])
 3. 展示不同類型的Closure用法
-4. 理解為什麼純Closure無法解決UI更新問題
+4. 理解為什麼純Closure無法解決Badge更新問題
 
 ❌ Stage3的實際限制：
 1. UI依然不會自動更新
-2. 只能在Console觀察Closure執行
-3. 無法真正通知ViewController層
-4. 展示了為什麼需要更高級的解決方案
+2. Badge不會響應新增操作
+3. 只能在Console觀察Closure執行
+4. 無法真正通知ViewController層
 
 🔍 Console測試重點：
 - 觀察Closure執行的日誌訊息
@@ -193,5 +249,5 @@ class Stage3_ClosureDataService: TodoDataServiceProtocol {
 - 異步操作結果回傳
 
 下一步展望：
-Stage4 NotificationCenter將真正解決跨層級通訊問題！
+Stage4 NotificationCenter將真正解決跨層級通訊和Badge更新問題！
 */

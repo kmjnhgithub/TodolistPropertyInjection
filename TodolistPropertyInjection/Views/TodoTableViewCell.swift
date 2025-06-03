@@ -20,12 +20,12 @@ class TodoTableViewCell: UITableViewCell {
     // MARK: - Cell重用準備
     override func prepareForReuse() {
         super.prepareForReuse()
-        // 🎯 關鍵：清除之前的狀態，避免重用問題
+        //   關鍵：清除之前的狀態，避免重用問題
         titleLabel.attributedText = nil
         titleLabel.text = nil
         statusLabel.text = nil
         statusLabel.textColor = .label
-        print("🔄 Cell重用清理完成")
+        print(" Cell重用清理完成")
     }
     
     private func setupUI() {
@@ -68,17 +68,17 @@ class TodoTableViewCell: UITableViewCell {
     
     // MARK: - 核心配置方法 (修正版)
     func configure(with todo: Todo) {
-        print("🎨 配置Cell - Title: \(todo.title), Completed: \(todo.isCompleted)")
+        print(" 配置Cell - Title: \(todo.title), Completed: \(todo.isCompleted)")
         
-        // 🎯 Step 1: 先清除所有之前的樣式
+        //   Step 1: 先清除所有之前的樣式
         titleLabel.attributedText = nil
         titleLabel.text = nil
         
-        // 🎯 Step 2: 設置狀態標籤
-        statusLabel.text = todo.isCompleted ? "✅ 完成" : "⏳ 待辦"
+        //   Step 2: 設置狀態標籤
+        statusLabel.text = todo.isCompleted ? "  完成" : "⏳ 待辦"
         statusLabel.textColor = todo.isCompleted ? .systemGreen : .systemOrange
         
-        // 🎯 Step 3: 根據狀態設置文字樣式
+        //   Step 3: 根據狀態設置文字樣式
         if todo.isCompleted {
             // 已完成：使用刪除線
             let attributedString = NSMutableAttributedString(string: todo.title)
@@ -99,7 +99,7 @@ class TodoTableViewCell: UITableViewCell {
             )
             
             titleLabel.attributedText = attributedString
-            print("✅ 已套用完成樣式：刪除線 + 灰色文字")
+            print("  已套用完成樣式：刪除線 + 灰色文字")
             
         } else {
             // 未完成：普通文字
@@ -108,11 +108,11 @@ class TodoTableViewCell: UITableViewCell {
             print("⏳ 已套用待辦樣式：普通文字")
         }
         
-        // 🎯 Step 4: 強制刷新顯示
+        //   Step 4: 強制刷新顯示
         titleLabel.setNeedsDisplay()
         layoutIfNeeded()
         
-        print("🎨 Cell配置完成 - 最終狀態檢查:")
+        print(" Cell配置完成 - 最終狀態檢查:")
         print("   - attributedText: \(titleLabel.attributedText != nil ? "有" : "無")")
         print("   - text: \(titleLabel.text ?? "nil")")
         print("   - textColor: \(titleLabel.textColor)")
@@ -121,7 +121,7 @@ class TodoTableViewCell: UITableViewCell {
     // MARK: - 除錯方法
     func debugCellState() {
         print("""
-        🔍 Cell狀態除錯:
+         Cell狀態除錯:
         - titleLabel.text: \(titleLabel.text ?? "nil")
         - titleLabel.attributedText: \(titleLabel.attributedText?.string ?? "nil")
         - titleLabel.textColor: \(titleLabel.textColor)
@@ -132,35 +132,35 @@ class TodoTableViewCell: UITableViewCell {
 }
 
 /*
-🎯 修正重點說明：
+  修正重點說明：
 
-✅ 解決的問題：
+  解決的問題：
 1. Cell重用時的狀態混亂
 2. attributedText和text的衝突
 3. 樣式更新不即時
 4. 視覺狀態與資料狀態不一致
 
-✅ 關鍵改進：
+  關鍵改進：
 1. prepareForReuse() - 清除重用狀態
 2. 明確的樣式設置順序
 3. 強制刷新顯示
 4. 詳細的除錯日誌
 
-✅ 設置順序：
+  設置順序：
 1. 清除之前的attributedText
 2. 設置狀態標籤
 3. 根據isCompleted設置文字樣式
 4. 強制刷新顯示
 
-⚠️ 常見錯誤避免：
+ 常見錯誤避免：
 - 不要同時設置text和attributedText
 - 重用Cell時要清除之前的狀態
 - 屬性設置要有明確的順序
 - 複雜樣式變更後要強制刷新
 
 這個修正版本確保：
-✅ 完成的Todo：刪除線 + 灰色文字
-✅ 未完成的Todo：普通黑色文字
-✅ 狀態切換後立即更新
-✅ Cell重用不會有樣式混亂
+  完成的Todo：刪除線 + 灰色文字
+  未完成的Todo：普通黑色文字
+  狀態切換後立即更新
+  Cell重用不會有樣式混亂
 */

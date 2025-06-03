@@ -1,4 +1,4 @@
-// MARK: - Stage 2: 修正版 - 純Delegate Pattern DataService
+// MARK: - Stage 2: 修正版 - 純Delegate Pattern DataService (Badge修復版)
 // 完全不修改任何其他程式碼，包括不擴展TodoListViewModel
 
 import Foundation
@@ -9,6 +9,9 @@ class Stage2_DelegateDataService: TodoDataServiceProtocol {
     
     // 🎯 Stage2重點：Delegate概念展示 (不依賴外部類別擴展)
     private weak var registeredViewModel: TodoListViewModel?
+    
+    // 🎯 Badge支援（但Stage2不會更新Badge - 展示限制）
+    private var badgeUpdateCallback: BadgeUpdateCallback?
     
     init() {
         // 初始化測試資料
@@ -28,6 +31,10 @@ class Stage2_DelegateDataService: TodoDataServiceProtocol {
     func addTodo(_ todo: Todo) {
         todos.append(todo)
         print("✅ Stage2: 新增Todo - \(todo.title)")
+        
+        // 🎯 Stage2限制：不會自動更新Badge
+        // 這展示了Stage2無法自動同步的特性
+        print("🔴 Stage2限制: Badge不會自動更新（需手動刷新）")
         
         // 🎯 Stage2核心：展示Delegate概念 (但不依賴ViewModel的新方法)
         notifyDelegateDataChanged(operation: "新增", todo: todo)
@@ -69,6 +76,23 @@ class Stage2_DelegateDataService: TodoDataServiceProtocol {
     func cleanup() {
         print("🧹 Stage2: 清理Delegate資源")
         registeredViewModel = nil
+        badgeUpdateCallback = nil
+    }
+    
+    // MARK: - Badge Protocol Implementation (Stage2空實作)
+    
+    func setBadgeUpdateCallback(_ callback: @escaping (Int) -> Void) {
+        self.badgeUpdateCallback = callback
+        print("🔴 Stage2: Badge回調已設置（但不會主動更新）")
+        
+        // Stage2特性：不會主動更新Badge
+        // 這讓用戶感受到Stage2的限制
+        callback(0) // 始終保持0
+    }
+    
+    func clearBadge() {
+        print("🔴 Stage2: 清除Badge（無效果，因為本來就不更新）")
+        // Stage2不處理Badge，所以清除也無效果
     }
     
     // MARK: - Delegate機制 (純DataService內部實作)
@@ -110,6 +134,7 @@ class Stage2_DelegateDataService: TodoDataServiceProtocol {
         2. 代理人 (Delegate): TodoListViewModel
         3. 協議 (Protocol): 在真實場景中會定義專門的Protocol
         4. 通知機制: 資料變更時通知代理人
+        5. Badge限制: 無法自動更新，展示Stage2局限性
         
         在真實場景中的完整實作：
         
@@ -117,11 +142,15 @@ class Stage2_DelegateDataService: TodoDataServiceProtocol {
             func didAddTodo(_ todo: Todo)
             func didDeleteTodo(_ todo: Todo)
             func didUpdateTodo(_ todo: Todo)
+            func didUpdateBadge(_ count: Int)
         }
         
         class TodoListViewModel: TodoDataDelegate {
             func didAddTodo(_ todo: Todo) {
                 // 處理新增通知
+            }
+            func didUpdateBadge(_ count: Int) {
+                // 處理Badge更新
             }
             // ... 其他方法
         }
@@ -133,41 +162,39 @@ class Stage2_DelegateDataService: TodoDataServiceProtocol {
 }
 
 /*
-🎯 Stage2 修正版設計說明：
+🎯 Stage2 Badge修復說明：
 
-✅ 為什麼不使用Extension：
-1. 保持「只新增DataService」的原則
-2. 避免修改TodoListViewModel的行為
-3. 展示純粹的Delegate概念
-4. 符合我們的學習目標
+✅ 新增Badge Protocol實作：
+1. setBadgeUpdateCallback - 設置但不主動調用
+2. clearBadge - 空實作，展示限制
+3. Badge始終保持0，突出Stage2的限制
 
 ✅ 這個設計的學習價值：
 1. 展示Delegate Pattern的基本概念
 2. 示範weak reference的使用
 3. 理解委託者和代理人的關係
-4. 展示為什麼純DataService層無法直接更新UI
+4. 感受Stage2無法自動更新Badge的限制
 
 ❌ Stage2的實際限制：
 1. UI依然不會自動更新
-2. 只能在Console觀察Delegate概念
-3. 無法真正實現雙向通訊
+2. Badge不會響應新增操作
+3. 只能在Console觀察Delegate概念
 4. 展示了為什麼需要更完整的解決方案
 
 🔍 Console測試重點：
 - 觀察Delegate註冊和通知的日誌
 - 理解weak reference的重要性
 - 體驗委託關係的建立過程
-- 感受純DataService層通訊的限制
+- 感受Badge不更新的限制
 
-💡 真實世界的Delegate應用：
-- UITableViewDelegate
-- UITextFieldDelegate
-- Custom Protocol定義
-- 一對一的強型別通訊
+💡 與Stage1對比：
+- Stage1: 完全無Badge概念
+- Stage2: 有Badge接口但不實作
+- 為Stage4的Badge突破做鋪墊
 
 修正重點：
-- 移除了extension TodoListViewModel
-- 所有邏輯都在DataService內部
-- 純粹展示Delegate概念，不修改其他類別
-- 符合「只新增DataService」的原則
+- 完全符合TodoDataServiceProtocol
+- 保持原有Delegate概念展示
+- 新增Badge空實作突出限制
+- 為後續階段對比做準備
 */

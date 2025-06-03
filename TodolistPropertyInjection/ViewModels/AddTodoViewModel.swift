@@ -20,12 +20,12 @@ class AddTodoViewModel {
     
     func addTodo(title: String) {
         guard !title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
-            print("⚠️ 不能新增空白的Todo")
+            print(" 不能新增空白的Todo")
             return
         }
         
         let newTodo = Todo(title: title)
         dataService.addTodo(newTodo)
-        print("✅ 新增Todo成功: \(title)")
+        print("  新增Todo成功: \(title)")
     }
 }

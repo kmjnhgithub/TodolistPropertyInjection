@@ -29,9 +29,9 @@ class TodoDetailViewController: UIViewController {
     
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
-        // 🎯 Stage1限制：需要手動刷新資料
+        //   Stage1限制：需要手動刷新資料
         updateUI()
-        print("🔄 Stage1: 手動刷新TodoDetail資料")
+        print(" Stage1: 手動刷新TodoDetail資料")
     }
     
     private func setupViewModel() {
@@ -154,7 +154,7 @@ class TodoDetailViewController: UIViewController {
         }
         
         titleLabel.text = todo.title
-        statusLabel.text = todo.isCompleted ? "✅ 已完成" : "⏳ 待完成"
+        statusLabel.text = todo.isCompleted ? "  已完成" : "⏳ 待完成"
         statusLabel.textColor = todo.isCompleted ? .systemGreen : .systemOrange
         uuidLabel.text = "UUID: \(todo.uuid)"
         
@@ -165,9 +165,9 @@ class TodoDetailViewController: UIViewController {
     
     @objc private func toggleButtonTapped() {
         viewModel.toggleCompletion()
-        // 🎯 Stage1限制：需要手動更新UI
+        //   Stage1限制：需要手動更新UI
         updateUI()
-        print("🔄 Stage1: 手動更新完成狀態UI")
+        print(" Stage1: 手動更新完成狀態UI")
     }
     
     @objc private func deleteButtonTapped() {
@@ -180,7 +180,7 @@ class TodoDetailViewController: UIViewController {
         alert.addAction(UIAlertAction(title: "取消", style: .cancel))
         alert.addAction(UIAlertAction(title: "刪除", style: .destructive) { [weak self] _ in
             self?.viewModel.deleteTodo()
-            // 🎯 Stage1限制：刪除後需要手動返回
+            //   Stage1限制：刪除後需要手動返回
             self?.navigationController?.popViewController(animated: true)
             print("🗑️ Stage1: 刪除後手動返回上一頁")
         })
