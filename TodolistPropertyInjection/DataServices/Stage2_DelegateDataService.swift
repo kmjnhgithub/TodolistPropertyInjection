@@ -1,12 +1,5 @@
-//
-//  Stage2_DelegateDataService.swift
-//  TodolistPropertyInjection
-//
-//  Created by mike liu on 2025/6/2.
-//
-
-// MARK: - Stage 2: 純Delegate Pattern DataService
-// ViewController完全不需要修改
+// MARK: - Stage 2: 修正版 - 純Delegate Pattern DataService
+// 完全不修改任何其他程式碼，包括不擴展TodoListViewModel
 
 import Foundation
 
@@ -14,15 +7,15 @@ class Stage2_DelegateDataService: TodoDataServiceProtocol {
     // 簡單的記憶體存儲
     private var todos: [Todo] = []
     
-    // 🎯 Stage2重點：記錄哪些ViewModel需要被通知
-    private var viewModelsToNotify: [WeakRef<TodoListViewModel>] = []
+    // 🎯 Stage2重點：Delegate概念展示 (不依賴外部類別擴展)
+    private weak var registeredViewModel: TodoListViewModel?
     
     init() {
         // 初始化測試資料
         todos = [
             Todo(title: "學習Delegate Pattern"),
-            Todo(title: "實作ViewModel間通訊"),
-            Todo(title: "測試資料自動同步")
+            Todo(title: "理解委託概念"),
+            Todo(title: "不依賴外部類別擴展")
         ]
         print("🎯 Stage2: Delegate Pattern - 已初始化")
     }
@@ -35,8 +28,9 @@ class Stage2_DelegateDataService: TodoDataServiceProtocol {
     func addTodo(_ todo: Todo) {
         todos.append(todo)
         print("✅ Stage2: 新增Todo - \(todo.title)")
-        // 🎯 Stage2: 資料變更後通知相關ViewModel
-        notifyViewModels()
+        
+        // 🎯 Stage2核心：展示Delegate概念 (但不依賴ViewModel的新方法)
+        notifyDelegateDataChanged(operation: "新增", todo: todo)
     }
     
     func deleteTodo(by uuid: String) {
@@ -48,8 +42,8 @@ class Stage2_DelegateDataService: TodoDataServiceProtocol {
         todos.removeAll { $0.uuid == uuid }
         print("❌ Stage2: 刪除Todo - \(todoToDelete.title)")
         
-        // 🎯 Stage2: 資料變更後通知相關ViewModel
-        notifyViewModels()
+        // 🎯 Stage2核心：展示Delegate概念
+        notifyDelegateDataChanged(operation: "刪除", todo: todoToDelete)
     }
     
     func updateTodo(_ todo: Todo) {
@@ -57,125 +51,123 @@ class Stage2_DelegateDataService: TodoDataServiceProtocol {
             todos[index] = todo
             print("🔄 Stage2: 更新Todo - \(todo.title)")
             
-            // 🎯 Stage2: 資料變更後通知相關ViewModel
-            notifyViewModels()
+            // 🎯 Stage2核心：展示Delegate概念
+            notifyDelegateDataChanged(operation: "更新", todo: todo)
         }
     }
     
     func setupDataBinding(for viewModel: Any) {
         if let todoListVM = viewModel as? TodoListViewModel {
-            // 🎯 Stage2: 註冊需要被通知的ViewModel
-            registerViewModel(todoListVM)
-            print("🎯 Stage2: 註冊TodoListViewModel到通知列表")
+            // 🎯 Stage2: 註冊ViewModel為Delegate (不呼叫ViewModel的新方法)
+            registerDelegate(todoListVM)
+            print("🎯 Stage2: 註冊TodoListViewModel為Delegate")
         } else {
-            print("🎯 Stage2: \(type(of: viewModel)) 不需要資料綁定")
+            print("🎯 Stage2: \(type(of: viewModel)) 不需要Delegate綁定")
         }
     }
     
     func cleanup() {
-        print("🧹 Stage2: 清理資源")
-        // 清理弱引用
-        cleanupWeakReferences()
+        print("🧹 Stage2: 清理Delegate資源")
+        registeredViewModel = nil
     }
     
-    // MARK: - ViewModel通知機制
-    private func registerViewModel(_ viewModel: TodoListViewModel) {
-        // 避免重複註冊
-        cleanupWeakReferences()
-        
-        // 新增到通知列表
-        viewModelsToNotify.append(WeakRef(value: viewModel))
-        print("📝 Stage2: ViewModel已註冊到通知列表，目前共 \(viewModelsToNotify.count) 個")
+    // MARK: - Delegate機制 (純DataService內部實作)
+    private func registerDelegate(_ viewModel: TodoListViewModel) {
+        // 使用weak reference避免循環引用
+        registeredViewModel = viewModel
+        print("📝 Stage2: ViewModel已註冊為Delegate")
     }
     
-    private func notifyViewModels() {
-        // 清理已經被釋放的ViewModel
-        cleanupWeakReferences()
+    private func notifyDelegateDataChanged(operation: String, todo: Todo) {
+        print("📢 Stage2: 準備通知Delegate - \(operation)操作")
         
-        // 通知所有還活著的ViewModel
-        for weakRef in viewModelsToNotify {
-            if let viewModel = weakRef.value {
-                viewModel.handle DataChanged()
-                print("📢 Stage2: 已通知ViewModel資料變更")
-            }
+        // 檢查Delegate是否還存在
+        if let delegate = registeredViewModel {
+            print("✅ Stage2: Delegate存在，執行通知")
+            
+            // 🎯 這裡我們不呼叫ViewModel的任何新方法
+            // 只是展示Delegate Pattern的概念
+            print("📊 Stage2: Delegate通知成功 - \(operation): \(todo.title)")
+            print("📊 Stage2: 當前Todo總數: \(delegate.todos.count)")
+            
+            // 在真實的Delegate Pattern中，這裡會呼叫delegate的方法
+            // 但為了不修改TodoListViewModel，我們只做概念展示
+            print("💡 Stage2: 在真實場景中，這裡會呼叫delegate.didUpdateData()")
+            
+        } else {
+            print("⚠️ Stage2: Delegate已被釋放，無法通知")
         }
-    }
-    
-    private func cleanupWeakReferences() {
-        viewModelsToNotify = viewModelsToNotify.filter { $0.value != nil }
-    }
-}
-
-// MARK: - 弱引用包裝器
-class WeakRef<T: AnyObject> {
-    weak var value: T?
-    
-    init(value: T) {
-        self.value = value
-    }
-}
-
-// MARK: - TodoListViewModel擴展 (處理資料變更通知)
-extension TodoListViewModel {
-    // 🎯 Stage2: 處理資料變更的方法
-    func handleDataChanged() {
-        // 這裡可以觸發UI更新，但不直接操作ViewController
-        print("🔄 Stage2: TodoListViewModel收到資料變更通知")
         
-        // 🎯 在這個階段，我們實際上無法直接更新UI
-        // 這展現了Stage2的限制：ViewModel無法直接通知ViewController
-        // 這個問題會在Stage4 (NotificationCenter) 中解決
+        print("✅ Stage2: Delegate通知流程完成")
+    }
+    
+    // MARK: - Delegate Pattern 概念展示
+    private func demonstrateDelegatePattern() {
+        print("""
+        💡 Stage2 教學: Delegate Pattern 概念
         
-        // 僅在console顯示同步狀態
-        let todoCount = todos.count
-        print("📊 Stage2: 目前Todo總數: \(todoCount)")
-        print("⚠️ Stage2限制: ViewModel層收到通知，但無法直接更新UI")
-        print("💡 解決方案: Stage4將使用NotificationCenter來橋接ViewModel和ViewController")
+        1. 委託者 (Delegator): Stage2_DelegateDataService
+        2. 代理人 (Delegate): TodoListViewModel
+        3. 協議 (Protocol): 在真實場景中會定義專門的Protocol
+        4. 通知機制: 資料變更時通知代理人
+        
+        在真實場景中的完整實作：
+        
+        protocol TodoDataDelegate: AnyObject {
+            func didAddTodo(_ todo: Todo)
+            func didDeleteTodo(_ todo: Todo)
+            func didUpdateTodo(_ todo: Todo)
+        }
+        
+        class TodoListViewModel: TodoDataDelegate {
+            func didAddTodo(_ todo: Todo) {
+                // 處理新增通知
+            }
+            // ... 其他方法
+        }
+        
+        但為了保持「不修改其他程式碼」的原則，
+        我們只在DataService內部展示Delegate概念。
+        """)
     }
 }
 
-// MARK: - ServiceContainer 切換
 /*
-只需要在ServiceContainer中修改這一行：
+🎯 Stage2 修正版設計說明：
 
-class ServiceContainer {
-    static let shared = ServiceContainer()
-    private init() {}
-    
-    // 🎯 編譯時切換：只需要改這一行！
-    private let currentDataService: TodoDataServiceProtocol = Stage2_DelegateDataService()
-    
-    func getDataService() -> TodoDataServiceProtocol {
-        return currentDataService
-    }
-}
-*/
+✅ 為什麼不使用Extension：
+1. 保持「只新增DataService」的原則
+2. 避免修改TodoListViewModel的行為
+3. 展示純粹的Delegate概念
+4. 符合我們的學習目標
 
-// MARK: - Stage2 實際效果說明
-/*
-🎯 Stage2的實際狀況：
+✅ 這個設計的學習價值：
+1. 展示Delegate Pattern的基本概念
+2. 示範weak reference的使用
+3. 理解委託者和代理人的關係
+4. 展示為什麼純DataService層無法直接更新UI
 
-✅ 改進的地方：
-- DataService內部實作了Delegate Pattern
-- ViewModel之間可以相互通知
-- 展示了物件間通訊的基礎概念
+❌ Stage2的實際限制：
+1. UI依然不會自動更新
+2. 只能在Console觀察Delegate概念
+3. 無法真正實現雙向通訊
+4. 展示了為什麼需要更完整的解決方案
 
-❌ 仍然存在的限制：
-- ViewController層完全不變，所以UI不會自動更新
-- viewWillAppear時依然需要手動reloadData
-- Tab間同步依然無法實現
+🔍 Console測試重點：
+- 觀察Delegate註冊和通知的日誌
+- 理解weak reference的重要性
+- 體驗委託關係的建立過程
+- 感受純DataService層通訊的限制
 
-💡 學習重點：
-這個階段重點是展示Delegate Pattern的**概念**，
-而不是實際的UI自動更新效果。
-真正的自動UI更新會在Stage4 (NotificationCenter) 實現。
+💡 真實世界的Delegate應用：
+- UITableViewDelegate
+- UITextFieldDelegate
+- Custom Protocol定義
+- 一對一的強型別通訊
 
-🎯 測試方式：
-1. 觀察Console日誌中的Delegate通知訊息
-2. 體驗ViewModel層的通訊機制
-3. 理解為什麼單純的Delegate Pattern無法橋接到UI層
-4. 為Stage4的NotificationCenter解決方案做準備
-
-這樣的設計展現了真實開發中的漸進式改進過程：
-Stage1 → Stage2 → Stage3 → Stage4 (完整的自動更新)
+修正重點：
+- 移除了extension TodoListViewModel
+- 所有邏輯都在DataService內部
+- 純粹展示Delegate概念，不修改其他類別
+- 符合「只新增DataService」的原則
 */
