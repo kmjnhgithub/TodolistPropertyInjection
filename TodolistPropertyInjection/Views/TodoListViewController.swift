@@ -1,5 +1,5 @@
 //
-//  TodoListViewController.swift (Debug版本)
+//  TodoListViewController.swift (最小化重構版)
 //  TodolistPropertyInjection
 //
 //  Created by mike liu on 2025/6/2.
@@ -8,13 +8,19 @@
 import UIKit
 import Combine
 
-// MARK: - TodoList ViewController (Badge除錯版)
+// MARK: - TodoList ViewController (最小化重構版)
 class TodoListViewController: UIViewController {
     private var viewModel: TodoListViewModel!
     private var tableView: UITableView!
     
     // 🎯 Combine訂閱管理
     private var cancellables = Set<AnyCancellable>()
+    
+    // MARK: - Stage配置管理 (新增)
+    private let stageManager = StageConfigurationManager.shared
+    private var currentStage: TodoDataStage {
+        return stageManager.getCurrentStage()
+    }
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -28,12 +34,14 @@ class TodoListViewController: UIViewController {
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         print("🔍 TodoListViewController: viewWillAppear 開始")
-        // 🎯 Stage1限制：需要手動刷新資料
+        // 🎯 手動刷新資料
         tableView.reloadData()
         print("🔄 手動刷新TodoList資料")
         
-        // 🎯 Badge處理：當用戶查看清單時清除Badge
-        viewModel.markBadgeAsViewed()
+        // 🎯 Badge處理：當用戶查看清單時清除Badge (只有支援Badge的Stage)
+        if currentStage.badgeSupported {
+            viewModel.markBadgeAsViewed()
+        }
         print("🔍 TodoListViewController: viewWillAppear 完成")
     }
     
@@ -69,20 +77,28 @@ class TodoListViewController: UIViewController {
     }
     
     private func setupNavigationBar() {
+        // 🎯 使用Stage配置管理器 (替換原本的getCurrentStageName)
         navigationItem.rightBarButtonItem = UIBarButtonItem(
-            title: getCurrentStageName(),
+            title: currentStage.displayName,
             style: .plain,
             target: nil,
             action: nil
         )
-        // 顯示目前使用的資料傳遞方式
-        navigationItem.rightBarButtonItem?.tintColor = .systemGreen
+        // 根據Badge支援狀態設置顏色
+        let color: UIColor = currentStage.badgeSupported ? .systemGreen : .systemOrange
+        navigationItem.rightBarButtonItem?.tintColor = color
     }
     
-    // MARK: - Badge觀察設置 (Debug版)
+    // MARK: - Badge觀察設置 (修改：只有支援Badge的Stage才設置)
     
     private func setupBadgeObservation() {
         print("🔍 開始設置Badge觀察")
+        
+        // 🎯 只有支援Badge的Stage才設置觀察
+        guard currentStage.badgeSupported else {
+            print("🔍 \(currentStage.displayName) 不支援Badge，跳過設置")
+            return
+        }
         
         // 🎯 使用Combine觀察Badge變化
         viewModel.$badgeCount
@@ -102,6 +118,12 @@ class TodoListViewController: UIViewController {
     
     private func updateTabBarBadge(count: Int) {
         print("🔍 準備更新TabBar Badge: \(count)")
+        
+        // 🎯 確保只有支援Badge的Stage才更新
+        guard currentStage.badgeSupported else {
+            print("🔍 \(currentStage.displayName) 不支援Badge，跳過更新")
+            return
+        }
         
         // 🎯 更新TabBar的Badge
         DispatchQueue.main.async { [weak self] in
@@ -145,45 +167,6 @@ class TodoListViewController: UIViewController {
         }
     }
     
-    // MARK: - Debug方法
-    
-    func debugBadgeState() {
-        print("""
-        🔍 Badge狀態除錯:
-        ========================
-        ViewModel Badge Count: \(viewModel.badgeCount)
-        TabBar Items Count: \(tabBarController?.tabBar.items?.count ?? 0)
-        Tab 0 Badge Value: \(tabBarController?.tabBar.items?[0].badgeValue ?? "nil")
-        Tab 0 Badge Color: \(tabBarController?.tabBar.items?[0].badgeColor?.description ?? "nil")
-        Cancellables Count: \(cancellables.count)
-        ========================
-        """)
-    }
-    
-    // MARK: - 工具方法
-    
-    private func getCurrentStageName() -> String {
-        let dataService = ServiceContainer.shared.getDataService()
-        
-        if dataService is Stage1_PropertyDataService {
-            return "Stage1"
-        } else if dataService is Stage2_DelegateDataService {
-            return "Stage2"
-        } else if dataService is Stage3_ClosureDataService {
-            return "Stage3"
-        } else if dataService is Stage4_NotificationDataService {
-            return "Stage4"
-        } else if dataService is Stage5_SingletonDataService {
-            return "Stage5"
-        } else if dataService is Stage6_UserDefaultsDataService {
-            return "Stage6"
-        } else if dataService is Stage7_CombineDataService {
-            return "Stage7"
-        } else {
-            return "Unknown"
-        }
-    }
-    
     deinit {
         // 🎯 清理Combine訂閱
         cancellables.removeAll()
@@ -191,7 +174,7 @@ class TodoListViewController: UIViewController {
     }
 }
 
-// MARK: - TodoList TableView Methods
+// MARK: - TodoList TableView Methods (保持原樣)
 extension TodoListViewController: UITableViewDataSource, UITableViewDelegate {
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         return viewModel.todos.count
@@ -217,7 +200,7 @@ extension TodoListViewController: UITableViewDataSource, UITableViewDelegate {
     func tableView(_ tableView: UITableView, commit editingStyle: UITableViewCell.EditingStyle, forRowAt indexPath: IndexPath) {
         if editingStyle == .delete {
             viewModel.deleteTodo(at: indexPath.row)
-            // 🎯 需要手動更新UI（Stage1-3的限制）
+            // 🎯 需要手動更新UI
             tableView.deleteRows(at: [indexPath], with: .fade)
             print("🗑️ 手動刪除TableView列")
         }

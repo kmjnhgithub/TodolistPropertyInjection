@@ -130,29 +130,4 @@ class TodoListViewModel: ObservableObject {
             print("🔍 Badge已經是0，無需清除")
         }
     }
-    
-    func getCurrentBadgeCount() -> Int {
-        print("🔍 getCurrentBadgeCount: \(badgeCount)")
-        return badgeCount
-    }
-    
-    // MARK: - Debug方法
-    
-    func debugBadgeState() {
-        print("""
-        🔍 ViewModel Badge狀態除錯:
-        ========================
-        Badge Count: \(badgeCount)
-        DataService Type: \(type(of: dataService))
-        Cancellables Count: \(cancellables.count)
-        Todos Count: \(todos.count)
-        ========================
-        """)
-    }
-    
-    func testBadgeUpdate() {
-        print("🔍 手動測試Badge更新")
-        badgeCount = 99
-        print("🔍 測試完成，Badge應該顯示: 99")
-    }
 }

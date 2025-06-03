@@ -1,15 +1,16 @@
 //
-//  AddTodoViewController.swift
+//  AddTodoViewController.swift (重構版)
 //  TodolistPropertyInjection
 //
 //  Created by mike liu on 2025/6/2.
 //
 import UIKit
 
-// MARK: - AddTodo ViewController (移除Alert版)
+// MARK: - AddTodo ViewController (重構版)
 class AddTodoViewController: UIViewController {
     private var viewModel: AddTodoViewModel!
     
+    // MARK: - UI元件
     private let scrollView = UIScrollView()
     private let contentView = UIView()
     private let titleLabel = UILabel()
@@ -17,12 +18,29 @@ class AddTodoViewController: UIViewController {
     private let addButton = UIButton(type: .system)
     private let instructionLabel = UILabel()
     
+    // MARK: - Stage配置管理
+    private let stageManager = StageConfigurationManager.shared
+    private var currentStage: TodoDataStage {
+        return stageManager.getCurrentStage()
+    }
+    
+    // MARK: - 生命週期
     override func viewDidLoad() {
         super.viewDidLoad()
         setupViewModel()
         setupUI()
+        
+        // 🔍 Debug: 印出當前Stage資訊
+        stageManager.printCurrentStageInfo()
     }
     
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        // 每次出現時更新Stage相關UI (以防ServiceContainer被更改)
+        updateStageRelatedUI()
+    }
+    
+    // MARK: - 設置方法
     private func setupViewModel() {
         viewModel = AddTodoViewModel()
     }
@@ -34,8 +52,6 @@ class AddTodoViewController: UIViewController {
         setupScrollView()
         setupContentView()
         setupNavigationBar()
-        
-        // 鍵盤處理
         setupKeyboardObservers()
     }
     
@@ -88,9 +104,9 @@ class AddTodoViewController: UIViewController {
         addButton.alpha = 0.5
         contentView.addSubview(addButton)
         
-        // 說明文字 - 動態顯示當前Stage資訊
+        // 說明文字 - 使用配置管理器
         instructionLabel.translatesAutoresizingMaskIntoConstraints = false
-        instructionLabel.text = getCurrentStageInstruction()
+        instructionLabel.text = stageManager.getStageInstruction(for: currentStage)
         instructionLabel.font = .systemFont(ofSize: 14)
         instructionLabel.textColor = .systemGray
         instructionLabel.numberOfLines = 0
@@ -121,13 +137,49 @@ class AddTodoViewController: UIViewController {
     }
     
     private func setupNavigationBar() {
+        updateNavigationBar()
+    }
+    
+    private func updateNavigationBar() {
+        // 🎯 使用enum安全地設置導航標題
         navigationItem.rightBarButtonItem = UIBarButtonItem(
-            title: getCurrentStageName(),
+            title: currentStage.displayName,
             style: .plain,
-            target: nil,
-            action: nil
+            target: self,
+            action: #selector(stageInfoTapped)
         )
-        navigationItem.rightBarButtonItem?.tintColor = .systemGreen
+        
+        // 根據Stage設置不同顏色
+        let color: UIColor = currentStage.badgeSupported ? .systemGreen : .systemOrange
+        navigationItem.rightBarButtonItem?.tintColor = color
+    }
+    
+    private func updateStageRelatedUI() {
+        // 更新說明文字
+        instructionLabel.text = stageManager.getStageInstruction(for: currentStage)
+        
+        // 更新導航欄
+        updateNavigationBar()
+        
+        // 更新按鈕樣式 (響應式Stage可以有不同的視覺效果)
+        updateButtonStyle()
+    }
+    
+    private func updateButtonStyle() {
+        switch currentStage.syncCapability {
+        case .reactive:
+            // Stage7: 響應式風格
+            addButton.backgroundColor = .systemPurple
+            addButton.setTitle("🚀 響應式新增", for: .normal)
+        case .automatic:
+            // Stage4-6: 自動同步風格
+            addButton.backgroundColor = .systemGreen
+            addButton.setTitle("✅ 自動新增", for: .normal)
+        default:
+            // Stage1-3: 基礎風格
+            addButton.backgroundColor = .systemBlue
+            addButton.setTitle("📝 新增Todo", for: .normal)
+        }
     }
     
     private func setupKeyboardObservers() {
@@ -139,10 +191,7 @@ class AddTodoViewController: UIViewController {
         )
     }
     
-    deinit {
-        NotificationCenter.default.removeObserver(self)
-    }
-    
+    // MARK: - 事件處理
     @objc private func keyboardWillShow(notification: NSNotification) {
         if let keyboardSize = (notification.userInfo?[UIResponder.keyboardFrameEndUserInfoKey] as? NSValue)?.cgRectValue {
             let contentInsets = UIEdgeInsets(top: 0, left: 0, bottom: keyboardSize.height, right: 0)
@@ -168,6 +217,9 @@ class AddTodoViewController: UIViewController {
             return
         }
         
+        // 🎯 新增前的Stage特定處理
+        handlePreAddAction(for: currentStage)
+        
         viewModel.addTodo(title: title)
         
         // 清空輸入框
@@ -175,141 +227,148 @@ class AddTodoViewController: UIViewController {
         textFieldDidChange()
         textField.resignFirstResponder()
         
-        // 🎯 新設計：移除Alert，讓用戶純粹體驗各階段差異
-        // Stage1-3: 用戶會發現沒有即時反饋
-        // Stage4+: 用戶會驚喜發現Badge立即更新
-        // Stage7: 用戶會體驗到完全流暢的響應式更新
+        // 🎯 新增後的Stage特定處理
+        handlePostAddAction(for: currentStage, todoTitle: title)
         
-        print("✅ Todo新增完成，體驗不同Stage的同步效果")
+        print("✅ Todo新增完成，體驗\(currentStage.displayName)的同步效果")
     }
     
-    // MARK: - 動態Stage資訊
+    @objc private func stageInfoTapped() {
+        // 🎯 顯示當前Stage的詳細資訊
+        showStageInfoAlert()
+    }
     
-    private func getCurrentStageName() -> String {
-        let dataService = ServiceContainer.shared.getDataService()
-        
-        if dataService is Stage1_PropertyDataService {
-            return "Stage1"
-        } else if dataService is Stage2_DelegateDataService {
-            return "Stage2"
-        } else if dataService is Stage3_ClosureDataService {
-            return "Stage3"
-        } else if dataService is Stage4_NotificationDataService {
-            return "Stage4"
-        } else if dataService is Stage5_SingletonDataService {
-            return "Stage5"
-        } else if dataService is Stage6_UserDefaultsDataService {
-            return "Stage6"
-        } else if dataService is Stage7_CombineDataService {
-            return "Stage7"
-        } else {
-            return "Unknown"
+    // MARK: - Stage特定行為處理
+    private func handlePreAddAction(for stage: TodoDataStage) {
+        switch stage.syncCapability {
+        case .reactive:
+            print("🚀 \(stage.displayName): 準備響應式新增")
+        case .automatic:
+            print("✅ \(stage.displayName): 準備自動同步新增")
+        case .manual:
+            print("🔄 \(stage.displayName): 準備手動同步新增")
+        case .none:
+            print("❌ \(stage.displayName): 無同步能力")
         }
     }
     
-    private func getCurrentStageInstruction() -> String {
-        let dataService = ServiceContainer.shared.getDataService()
+    private func handlePostAddAction(for stage: TodoDataStage, todoTitle: String) {
+        let badgeStatus = stage.badgeSupported ? "Badge將更新" : "Badge不會更新"
+        print("📝 \(stage.displayName): 新增「\(todoTitle)」完成，\(badgeStatus)")
         
-        if dataService is Stage1_PropertyDataService {
-            return """
-            🎯 Stage1: Property直接傳遞
-            
-            特點：
-            • 簡單直接的資料傳遞方式
-            • 新增後需要手動切換到Todo清單才能看到結果
-            • 無法即時同步到其他頁面
-            • Badge不會自動更新
-            
-            體驗重點：
-            • 感受手動同步的不便
-            • 觀察Badge始終為0的限制
-            """
-        } else if dataService is Stage2_DelegateDataService {
-            return """
-            🎯 Stage2: Delegate委託模式
-            
-            特點：
-            • 展示一對一委託關係概念
-            • 仍無法實現真正的UI自動更新
-            • Badge依然不會自動更新
-            
-            體驗重點：
-            • 理解委託模式的基本概念
-            • 感受純DataService層通訊的限制
-            """
-        } else if dataService is Stage3_ClosureDataService {
-            return """
-            🎯 Stage3: Closure回調機制
-            
-            特點：
-            • 展示回調函數的使用方式
-            • 學習記憶體管理重要性
-            • Badge仍無法自動更新
-            
-            體驗重點：
-            • 理解Closure的語法和概念
-            • 觀察weak self的安全性
-            """
-        } else if dataService is Stage4_NotificationDataService {
-            return """
-            🎯 Stage4: NotificationCenter通知
-            
-            特點：
-            • 第一個實現真正UI自動更新的階段
-            • 跨層級通訊能力
-            • Badge開始有反應！
-            
-            體驗重點：
-            • 感受自動同步的驚喜
-            • 觀察Badge的即時更新
-            """
-        } else if dataService is Stage5_SingletonDataService {
-            return """
-            🎯 Stage5: Singleton全域狀態
-            
-            特點：
-            • 全域唯一實例管理
-            • 狀態在App生命週期內持續存在
-            • Badge自動更新
-            
-            體驗重點：
-            • 理解全域狀態管理
-            • 觀察持久的記憶體狀態
-            """
-        } else if dataService is Stage6_UserDefaultsDataService {
-            return """
-            🎯 Stage6: UserDefaults持久化
-            
-            特點：
-            • App重啟後資料仍然存在
-            • 記憶體快取 + 持久化存儲
-            • Badge自動更新
-            
-            體驗重點：
-            • 感受真正的資料持久化
-            • 重啟App後資料不丟失
-            """
-        } else if dataService is Stage7_CombineDataService {
-            return """
-            🎯 Stage7: Combine響應式框架
-            
-            特點：
-            • 現代化響應式程式設計
-            • 聲明式資料流管理
-            • 完美的自動記憶體管理
-            • 最流暢的Badge響應式更新
-            
-            體驗重點：
-            • 感受響應式的優雅和流暢
-            • 觀察即時的Badge動畫效果
-            • 體驗現代iOS開發的威力
-            """
-        } else {
-            return """
-            🎯 Unknown Stage
-            
-            請確認ServiceContainer中的DataService設定
-            """
+        // 🎯 根據Stage特性給出不同的視覺反饋
+        if !stage.badgeSupported {
+            // Stage1-3: 給出提示
+            showTemporaryFeedback("新增完成，請手動切換到Todo清單查看")
         }
+    }
+    
+    private func showTemporaryFeedback(_ message: String) {
+        // 簡單的臨時反饋 (替代Alert的輕量級方案)
+        let feedbackView = createFeedbackView(message: message)
+        view.addSubview(feedbackView)
+        
+        // 動畫顯示和隱藏
+        UIView.animate(withDuration: 0.3, animations: {
+            feedbackView.alpha = 1.0
+        }) { _ in
+            UIView.animate(withDuration: 0.3, delay: 2.0, options: [], animations: {
+                feedbackView.alpha = 0.0
+            }) { _ in
+                feedbackView.removeFromSuperview()
+            }
+        }
+    }
+    
+    private func createFeedbackView(message: String) -> UIView {
+        let feedbackView = UIView()
+        feedbackView.backgroundColor = UIColor.black.withAlphaComponent(0.8)
+        feedbackView.layer.cornerRadius = 8
+        feedbackView.alpha = 0.0
+        
+        let label = UILabel()
+        label.text = message
+        label.textColor = .white
+        label.font = .systemFont(ofSize: 14)
+        label.textAlignment = .center
+        label.numberOfLines = 0
+        
+        feedbackView.addSubview(label)
+        label.translatesAutoresizingMaskIntoConstraints = false
+        
+        NSLayoutConstraint.activate([
+            label.topAnchor.constraint(equalTo: feedbackView.topAnchor, constant: 12),
+            label.leadingAnchor.constraint(equalTo: feedbackView.leadingAnchor, constant: 16),
+            label.trailingAnchor.constraint(equalTo: feedbackView.trailingAnchor, constant: -16),
+            label.bottomAnchor.constraint(equalTo: feedbackView.bottomAnchor, constant: -12)
+        ])
+        
+        feedbackView.translatesAutoresizingMaskIntoConstraints = false
+        NSLayoutConstraint.activate([
+            feedbackView.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+            feedbackView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 60)
+        ])
+        
+        return feedbackView
+    }
+    
+    private func showStageInfoAlert() {
+        let stage = currentStage
+        let alert = UIAlertController(
+            title: stage.fullDescription,
+            message: """
+            \(stage.badgeDescription)
+            同步能力: \(stage.syncCapability.rawValue) \(stage.syncCapability.emoji)
+            
+            點擊「查看說明」了解更多詳情
+            """,
+            preferredStyle: .alert
+        )
+        
+        alert.addAction(UIAlertAction(title: "知道了", style: .default))
+        alert.addAction(UIAlertAction(title: "查看說明", style: .default) { _ in
+            self.showDetailedStageInfo()
+        })
+        
+        present(alert, animated: true)
+    }
+    
+    private func showDetailedStageInfo() {
+        let stage = currentStage
+        let detailVC = UIViewController()
+        detailVC.title = stage.fullDescription
+        
+        let textView = UITextView()
+        textView.text = stageManager.getStageInstruction(for: stage)
+        textView.font = .systemFont(ofSize: 16)
+        textView.isEditable = false
+        textView.backgroundColor = .systemBackground
+        
+        detailVC.view.addSubview(textView)
+        textView.translatesAutoresizingMaskIntoConstraints = false
+        NSLayoutConstraint.activate([
+            textView.topAnchor.constraint(equalTo: detailVC.view.safeAreaLayoutGuide.topAnchor),
+            textView.leadingAnchor.constraint(equalTo: detailVC.view.leadingAnchor),
+            textView.trailingAnchor.constraint(equalTo: detailVC.view.trailingAnchor),
+            textView.bottomAnchor.constraint(equalTo: detailVC.view.bottomAnchor)
+        ])
+        
+        detailVC.navigationItem.rightBarButtonItem = UIBarButtonItem(
+            barButtonSystemItem: .done,
+            target: self,
+            action: #selector(dismissDetailInfo)
+        )
+        
+        let navController = UINavigationController(rootViewController: detailVC)
+        present(navController, animated: true)
+    }
+    
+    @objc private func dismissDetailInfo() {
+        dismiss(animated: true)
+    }
+    
+    // MARK: - 清理
+    deinit {
+        NotificationCenter.default.removeObserver(self)
     }
 }
