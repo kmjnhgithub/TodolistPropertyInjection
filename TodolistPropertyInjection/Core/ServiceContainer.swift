@@ -11,8 +11,7 @@ class ServiceContainer {
     private init() {}
     
     //  編譯時切換：只需要改這一行！
-    private let currentDataService: TodoDataServiceProtocol = Stage7_CombineDataService()
-//    private let currentDataService: TodoDataServiceProtocol = Stage1_PropertyDataService()
+    private let currentDataService: TodoDataServiceProtocol = Stage3_ClosureDataService()
     
     func getDataService() -> TodoDataServiceProtocol {
         return currentDataService

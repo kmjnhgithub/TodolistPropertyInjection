@@ -88,7 +88,7 @@ class Stage4_NotificationDataService: TodoDataServiceProtocol {
     }
     
     func setupDataBinding(for viewModel: Any) {
-        if let todoListVM = viewModel as? TodoListViewModel {
+        if viewModel is TodoListViewModel {
             print("🎯 Stage4: TodoListViewModel將透過NotificationCenter自動接收更新")
             // 🎯 Stage4的魔法：ViewModel不需要任何特殊設定
             // NotificationCenter會自動橋接到ViewController層

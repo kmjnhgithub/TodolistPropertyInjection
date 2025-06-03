@@ -137,8 +137,9 @@ class TodoDetailViewController: UIViewController {
     }
     
     private func setupNavigationBar() {
+        let currentStage = StageConfigurationManager.shared.getCurrentStage()
         navigationItem.rightBarButtonItem = UIBarButtonItem(
-            title: "Stage1",
+            title: currentStage.displayName,
             style: .plain,
             target: nil,
             action: nil
