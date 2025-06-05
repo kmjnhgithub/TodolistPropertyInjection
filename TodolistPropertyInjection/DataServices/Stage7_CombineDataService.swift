@@ -139,7 +139,7 @@ class Stage7_CombineDataService: TodoDataServiceProtocol {
     }
     
     func setupDataBinding(for viewModel: Any) {
-        if viewModel is TodoListViewModel {
+        if viewModel is TodoListViewModelProtocol {
             print("🎯 Stage7: TodoListViewModel透過Combine響應式資料流自動同步")
             updateStatistics { $0.subscriptions += 1 }
         } else {

@@ -71,7 +71,7 @@ class Stage3_ClosureDataService: TodoDataServiceProtocol {
     }
     
     func setupDataBinding(for viewModel: Any) {
-        if let todoListVM = viewModel as? TodoListViewModel {
+        if let todoListVM = viewModel as? TodoListViewModelProtocol {
             // 🎯 Stage3: 設置Closure回調 (不依賴ViewModel的擴展方法)
             setupClosureCallback(for: todoListVM)
             print("🎯 Stage3: 為TodoListViewModel設置Closure回調")
@@ -104,7 +104,7 @@ class Stage3_ClosureDataService: TodoDataServiceProtocol {
     }
     
     // MARK: - 私有方法：Closure回調機制
-    private func setupClosureCallback(for viewModel: TodoListViewModel) {
+    private func setupClosureCallback(for viewModel: TodoListViewModelProtocol) {
         // 🎯 Stage3核心：設置回調Closure
         // 注意：這裡使用weak capture避免循環引用
         onDataChanged = { [weak viewModel] in

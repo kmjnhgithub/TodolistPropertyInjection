@@ -96,7 +96,7 @@ class Stage5_SingletonDataService: TodoDataServiceProtocol {
     }
     
     func setupDataBinding(for viewModel: Any) {
-        if let todoListVM = viewModel as? TodoListViewModel {
+        if viewModel is TodoListViewModelProtocol {
             print("🎯 Stage5: TodoListViewModel連接到全域Singleton狀態")
             print("📊 Stage5: Singleton創建時間: \(creationTimestamp)")
             print("📊 Stage5: 目前存取次數: \(accessCount)")

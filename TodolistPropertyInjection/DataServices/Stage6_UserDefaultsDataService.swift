@@ -139,7 +139,7 @@ class Stage6_UserDefaultsDataService: TodoDataServiceProtocol {
     }
     
     func setupDataBinding(for viewModel: Any) {
-        if viewModel is TodoListViewModel {
+        if viewModel is TodoDataServiceProtocol {
             print("🎯 Stage6: TodoListViewModel連接到UserDefaults持久化存儲")
             print("📊 Stage6: 首次啟動時間: \(firstLaunchDate)")
             print("📊 Stage6: 累計存取次數: \(accessCount)")

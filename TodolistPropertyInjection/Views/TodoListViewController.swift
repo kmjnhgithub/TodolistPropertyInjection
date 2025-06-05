@@ -6,17 +6,18 @@
 //
 
 import UIKit
-import Combine
 
-// MARK: - TodoList ViewController (最小化重構版)
+// MARK: - TodoList ViewController (統一接口版)
+// 🎯 使用統一的 TodoListViewModelProtocol 接口
+// 自動適配 UIKit (Stage 1-6) 和 Combine (Stage 7+) 版本
+
 class TodoListViewController: UIViewController {
-    private var viewModel: TodoListViewModel!
+    
+    // 🎯 關鍵改變：使用 Protocol 而非具體類型
+    private var viewModel: TodoListViewModelProtocol!
     private var tableView: UITableView!
     
-    // 🎯 Combine訂閱管理
-    private var cancellables = Set<AnyCancellable>()
-    
-    // MARK: - Stage配置管理 (新增)
+    // MARK: - Stage配置管理
     private let stageManager = StageConfigurationManager.shared
     private var currentStage: TodoDataStage {
         return stageManager.getCurrentStage()
@@ -34,21 +35,35 @@ class TodoListViewController: UIViewController {
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         print("🔍 TodoListViewController: viewWillAppear 開始")
-        // 🎯 手動刷新資料
+        
+        // 🎯 手動刷新資料（保持各 Stage 的行為一致性）
         tableView.reloadData()
         print("🔄 手動刷新TodoList資料")
         
-        // 🎯 Badge處理：當用戶查看清單時清除Badge (只有支援Badge的Stage)
+        // 🎯 Badge處理：當用戶查看清單時清除Badge（只有支援Badge的Stage）
         if currentStage.badgeSupported {
             viewModel.markBadgeAsViewed()
+            print("👁️ 用戶查看清單，清除Badge")
+        } else {
+            print("🔍 \(currentStage.displayName) 不支援Badge，跳過清除")
         }
+        
         print("🔍 TodoListViewController: viewWillAppear 完成")
     }
     
+    // MARK: - 設置方法
+    
     private func setupViewModel() {
-        print("🔍 開始設置TodoListViewModel")
-        viewModel = TodoListViewModel()
-        print("🔍 TodoListViewModel設置完成，當前Badge: \(viewModel.badgeCount)")
+        print("🔍 開始設置ViewModel（透過ServiceContainer）")
+        
+        // 🎯 關鍵改變：透過 ServiceContainer 自動選擇正確的 ViewModel
+        viewModel = ServiceContainer.shared.createTodoListViewModel()
+        
+        // 🔍 除錯：印出實際創建的 ViewModel 類型
+        print("✅ ViewModel創建完成：\(type(of: viewModel))")
+        
+        // 🔍 印出當前容器配置
+        ServiceContainer.shared.printContainerInfo()
     }
     
     private func setupUI() {
@@ -77,22 +92,26 @@ class TodoListViewController: UIViewController {
     }
     
     private func setupNavigationBar() {
-        // 🎯 使用Stage配置管理器 (替換原本的getCurrentStageName)
+        // 🎯 使用 ServiceContainer 的工具方法
+        let stage = ServiceContainer.shared.getCurrentStageInfo()
+        let usesCombine = ServiceContainer.shared.usesCombineFramework()
+        
         navigationItem.rightBarButtonItem = UIBarButtonItem(
-            title: currentStage.displayName,
+            title: "\(stage.displayName)\(usesCombine ? " 🚀" : "")",
             style: .plain,
-            target: nil,
-            action: nil
+            target: self,
+            action: #selector(stageInfoTapped)
         )
+        
         // 根據Badge支援狀態設置顏色
-        let color: UIColor = currentStage.badgeSupported ? .systemGreen : .systemOrange
+        let color: UIColor = stage.badgeSupported ? .systemGreen : .systemOrange
         navigationItem.rightBarButtonItem?.tintColor = color
     }
     
-    // MARK: - Badge觀察設置 (修改：只有支援Badge的Stage才設置)
+    // MARK: - Badge觀察設置（統一接口版）
     
     private func setupBadgeObservation() {
-        print("🔍 開始設置Badge觀察")
+        print("🔍 開始設置Badge觀察（統一接口）")
         
         // 🎯 只有支援Badge的Stage才設置觀察
         guard currentStage.badgeSupported else {
@@ -100,20 +119,13 @@ class TodoListViewController: UIViewController {
             return
         }
         
-        // 🎯 使用Combine觀察Badge變化
-        viewModel.$badgeCount
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] badgeCount in
-                print("🔍 Badge變化觀察到: \(badgeCount)")
-                self?.updateTabBarBadge(count: badgeCount)
-            }
-            .store(in: &cancellables)
+        // 🎯 關鍵改變：使用統一的回調接口，不管底層是UIKit還是Combine
+        viewModel.badgeUpdateHandler = { [weak self] badgeCount in
+            print("🔍 收到Badge更新回調: \(badgeCount)")
+            self?.updateTabBarBadge(count: badgeCount)
+        }
         
-        print("✅ TodoListViewController: Badge觀察已設置")
-        
-        // 🔍 立即檢查當前Badge狀態
-        print("🔍 當前Badge狀態: \(viewModel.badgeCount)")
-        updateTabBarBadge(count: viewModel.badgeCount)
+        print("✅ TodoListViewController: Badge觀察已設置（統一接口）")
     }
     
     private func updateTabBarBadge(count: Int) {
@@ -129,23 +141,11 @@ class TodoListViewController: UIViewController {
         DispatchQueue.main.async { [weak self] in
             print("🔍 在主線程更新Badge")
             
-            guard let self = self else {
-                print("⚠️ self已被釋放")
-                return
-            }
-            
-            guard let tabBarController = self.tabBarController else {
-                print("⚠️ tabBarController不存在")
-                return
-            }
-            
-            guard let tabBarItems = tabBarController.tabBar.items else {
-                print("⚠️ tabBar.items不存在")
-                return
-            }
-            
-            guard tabBarItems.count > 0 else {
-                print("⚠️ tabBar.items為空")
+            guard let self = self,
+                  let tabBarController = self.tabBarController,
+                  let tabBarItems = tabBarController.tabBar.items,
+                  !tabBarItems.isEmpty else {
+                print("⚠️ TabBar相關組件不可用")
                 return
             }
             
@@ -162,14 +162,82 @@ class TodoListViewController: UIViewController {
             if let badgeValue = tabBarItems[0].badgeValue {
                 print("✅ Badge驗證成功: \(badgeValue)")
             } else {
-                print("❌ Badge驗證失敗: nil")
+                print("✅ Badge驗證成功: 已清除")
             }
         }
     }
     
+    // MARK: - 事件處理
+    
+    @objc private func stageInfoTapped() {
+        // 🎯 顯示當前Stage的詳細資訊
+        showStageInfoAlert()
+    }
+    
+    private func showStageInfoAlert() {
+        let stage = currentStage
+        let usesCombine = ServiceContainer.shared.usesCombineFramework()
+        let vmType = usesCombine ? "Combine" : "UIKit"
+        
+        let alert = UIAlertController(
+            title: "\(stage.fullDescription)",
+            message: """
+            🎨 ViewModel: \(vmType) 版本
+            \(stage.badgeDescription)
+            🔄 同步能力: \(stage.syncCapability.rawValue) \(stage.syncCapability.emoji)
+            
+            點擊「查看說明」了解更多詳情
+            """,
+            preferredStyle: .alert
+        )
+        
+        alert.addAction(UIAlertAction(title: "知道了", style: .default))
+        alert.addAction(UIAlertAction(title: "查看說明", style: .default) { _ in
+            self.showDetailedStageInfo()
+        })
+        alert.addAction(UIAlertAction(title: "容器資訊", style: .default) { _ in
+            ServiceContainer.shared.printContainerInfo()
+        })
+        
+        present(alert, animated: true)
+    }
+    
+    private func showDetailedStageInfo() {
+        let stage = currentStage
+        let detailVC = UIViewController()
+        detailVC.title = stage.fullDescription
+        
+        let textView = UITextView()
+        textView.text = stageManager.getStageInstruction(for: stage)
+        textView.font = .systemFont(ofSize: 16)
+        textView.isEditable = false
+        textView.backgroundColor = .systemBackground
+        
+        detailVC.view.addSubview(textView)
+        textView.translatesAutoresizingMaskIntoConstraints = false
+        NSLayoutConstraint.activate([
+            textView.topAnchor.constraint(equalTo: detailVC.view.safeAreaLayoutGuide.topAnchor),
+            textView.leadingAnchor.constraint(equalTo: detailVC.view.leadingAnchor),
+            textView.trailingAnchor.constraint(equalTo: detailVC.view.trailingAnchor),
+            textView.bottomAnchor.constraint(equalTo: detailVC.view.bottomAnchor)
+        ])
+        
+        detailVC.navigationItem.rightBarButtonItem = UIBarButtonItem(
+            barButtonSystemItem: .done,
+            target: self,
+            action: #selector(dismissDetailInfo)
+        )
+        
+        let navController = UINavigationController(rootViewController: detailVC)
+        present(navController, animated: true)
+    }
+    
+    @objc private func dismissDetailInfo() {
+        dismiss(animated: true)
+    }
+    
+    // MARK: - 清理
     deinit {
-        // 🎯 清理Combine訂閱
-        cancellables.removeAll()
         print("🧹 TodoListViewController: 清理完成")
     }
 }
@@ -191,6 +259,8 @@ extension TodoListViewController: UITableViewDataSource, UITableViewDelegate {
         tableView.deselectRow(at: indexPath, animated: true)
         
         let todo = viewModel.getTodo(at: indexPath.row)
+        
+        // 🎯 使用 ServiceContainer 創建 DetailViewController 的 ViewModel
         let detailVC = TodoDetailViewController()
         detailVC.todoUUID = todo.uuid
         
@@ -210,3 +280,50 @@ extension TodoListViewController: UITableViewDataSource, UITableViewDelegate {
         return 60
     }
 }
+
+// MARK: - ViewController 重構說明
+/*
+🎯 重構重點：
+
+1. **統一接口使用**：
+   - 從具體的 TodoListViewModel 改為 TodoListViewModelProtocol
+   - 透過 ServiceContainer 自動選擇正確的實作版本
+   - ViewController 完全不知道底層是 UIKit 還是 Combine
+
+2. **自動化架構選擇**：
+   - ServiceContainer 根據 DataService 類型自動選擇 ViewModel
+   - Stage 7+ 自動使用 Combine 版本
+   - Stage 1-6 自動使用 UIKit 版本
+
+3. **統一的 Badge 處理**：
+   - 使用 badgeUpdateHandler 回調接口
+   - 不管底層技術，都使用相同的回調機制
+   - UIKit 版本直接使用回調，Combine 版本橋接回調
+
+4. **保持學習體驗**：
+   - 各 Stage 的行為特性保持不變
+   - Badge 支援狀態正確反映
+   - 手動刷新機制保持一致
+
+5. **除錯和資訊展示**：
+   - 導航欄顯示 Stage 和 ViewModel 類型
+   - 新增容器資訊查看功能
+   - 豐富的日誌輸出便於除錯
+
+6. **程式碼簡化**：
+   - 移除了 Combine 特定的程式碼
+   - 不需要條件判斷 Stage 類型
+   - 統一的接口讓程式碼更清晰
+
+✅ 重構效果：
+- ViewController 程式碼更簡潔
+- 自動適配不同 Stage 的架構
+- 保持完整的學習體驗
+- 便於未來擴展和維護
+
+🎓 學習價值：
+- 體驗接口導向程式設計
+- 理解多型的實際應用
+- 感受架構抽象的威力
+- 掌握統一接口的設計技巧
+*/

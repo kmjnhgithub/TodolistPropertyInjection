@@ -8,7 +8,7 @@ class Stage2_DelegateDataService: TodoDataServiceProtocol {
     private var todos: [Todo] = []
     
     // 🎯 Stage2重點：Delegate概念展示 (不依賴外部類別擴展)
-    private weak var registeredViewModel: TodoListViewModel?
+    private weak var registeredViewModel: TodoListViewModelProtocol?
     
     // 🎯 Badge支援（但Stage2不會更新Badge - 展示限制）
     private var badgeUpdateCallback: BadgeUpdateCallback?
@@ -64,7 +64,7 @@ class Stage2_DelegateDataService: TodoDataServiceProtocol {
     }
     
     func setupDataBinding(for viewModel: Any) {
-        if let todoListVM = viewModel as? TodoListViewModel {
+        if let todoListVM = viewModel as? TodoListViewModelProtocol {
             // 🎯 Stage2: 註冊ViewModel為Delegate (不呼叫ViewModel的新方法)
             registerDelegate(todoListVM)
             print("🎯 Stage2: 註冊TodoListViewModel為Delegate")
@@ -96,7 +96,7 @@ class Stage2_DelegateDataService: TodoDataServiceProtocol {
     }
     
     // MARK: - Delegate機制 (純DataService內部實作)
-    private func registerDelegate(_ viewModel: TodoListViewModel) {
+    private func registerDelegate(_ viewModel: TodoListViewModelProtocol) {
         // 使用weak reference避免循環引用
         registeredViewModel = viewModel
         print("📝 Stage2: ViewModel已註冊為Delegate")
