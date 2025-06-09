@@ -6,16 +6,16 @@
 //
 
 // MARK: - Enhanced DI Container with ViewModel Factory
-// 🎯 升級版依賴注入容器，支援根據 Stage 自動選擇 ViewModel 類型
+// 升級版依賴注入容器，支援根據 Stage 自動選擇 ViewModel 類型
 // 保持「一行切換」的特性，同時支援 UIKit 和 Combine 版本的 ViewModel
 
 class ServiceContainer {
     static let shared = ServiceContainer()
     private init() {}
     
-    // 🎯 編譯時切換：只需要改這一行！
+    // 編譯時切換：只需要改這一行！
     // 根據這個設定，整個 App 會自動選擇對應的 ViewModel 實作
-    private let currentDataService: TodoDataServiceProtocol = Stage6_UserDefaultsDataService()
+    private let currentDataService: TodoDataServiceProtocol = Stage3_ClosureDataService()
     // Stage1_PropertyDataService
     // Stage2_DelegateDataService
     // Stage3_ClosureDataService
@@ -34,13 +34,13 @@ class ServiceContainer {
     
     // MARK: - ViewModel 工廠方法
     
-    /// 🎯 核心：根據當前 Stage 自動選擇 TodoListViewModel 實作
+    /// 核心：根據當前 Stage 自動選擇 TodoListViewModel 實作
     /// - Returns: 適合當前 Stage 的 TodoListViewModel 實例
     func createTodoListViewModel() -> TodoListViewModelProtocol {
         
-        // 🎯 判斷邏輯：Stage 7+ 使用 Combine 版本，其他使用 UIKit 版本
+        // 判斷邏輯：Stage 7+ 使用 Combine 版本，其他使用 UIKit 版本
         if currentDataService is Stage7_CombineDataService {
-            print("🚀 ServiceContainer: 創建 Combine 版本 TodoListViewModel (Stage 7+)")
+            print("ServiceContainer: 創建 Combine 版本 TodoListViewModel (Stage 7+)")
             return TodoListViewModel_Combine(dataService: currentDataService)
         } else {
             print("🔧 ServiceContainer: 創建 UIKit 版本 TodoListViewModel (Stage 1-6)")
@@ -52,14 +52,14 @@ class ServiceContainer {
     /// - Parameter todoUUID: Todo 的 UUID
     /// - Returns: TodoDetailViewModel 實例
     func createTodoDetailViewModel(todoUUID: String) -> TodoDetailViewModel {
-        print("📝 ServiceContainer: 創建 TodoDetailViewModel")
+        print("ServiceContainer: 創建 TodoDetailViewModel")
         return TodoDetailViewModel(todoUUID: todoUUID, dataService: currentDataService)
     }
     
     /// 創建 AddTodoViewModel
     /// - Returns: AddTodoViewModel 實例
     func createAddTodoViewModel() -> AddTodoViewModel {
-        print("➕ ServiceContainer: 創建 AddTodoViewModel")
+        print("ServiceContainer: 創建 AddTodoViewModel")
         return AddTodoViewModel(dataService: currentDataService)
     }
     
@@ -100,14 +100,14 @@ class ServiceContainer {
         
         🏗️ ServiceContainer 配置資訊:
         =====================================
-        📊 當前 Stage: \(stage.fullDescription)
+        當前 Stage: \(stage.fullDescription)
         🔧 DataService: \(type(of: currentDataService))
-        🎨 ViewModel 類型: \(vmType)
+        ViewModel 類型: \(vmType)
         \(stage.badgeDescription)
-        🔄 同步能力: \(stage.syncCapability.rawValue) \(stage.syncCapability.emoji)
+        同步能力: \(stage.syncCapability.rawValue) \(stage.syncCapability.emoji)
         =====================================
         
-        💡 切換方式：
+        切換方式：
         只需修改 currentDataService 即可切換整個架構！
         
         """)
@@ -173,7 +173,7 @@ class ServiceContainer {
 
 // MARK: - ServiceContainer 設計說明
 /*
-🎯 設計原則與特點：
+設計原則與特點：
 
 1. **一行切換保持**：
    - 只需修改 currentDataService 就能切換整個架構

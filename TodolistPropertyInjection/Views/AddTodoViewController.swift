@@ -3,12 +3,12 @@
 //  TodolistPropertyInjection
 //
 //  Created by mike liu on 2025/6/2.
-//
+
+//// MARK: - AddTodo ViewController (ServiceContainer版)
+// 使用 ServiceContainer 統一創建 ViewModel
+// 根據不同 Stage 提供對應的用戶體驗
 import UIKit
 
-// MARK: - AddTodo ViewController (ServiceContainer版)
-// 🎯 使用 ServiceContainer 統一創建 ViewModel
-// 根據不同 Stage 提供對應的用戶體驗
 
 class AddTodoViewController: UIViewController {
     private var viewModel: AddTodoViewModel!
@@ -30,38 +30,38 @@ class AddTodoViewController: UIViewController {
     // MARK: - 生命週期
     override func viewDidLoad() {
         super.viewDidLoad()
-        print("🔍 AddTodoViewController: viewDidLoad 開始")
+        print("AddTodoViewController: viewDidLoad 開始")
         setupViewModel()
         setupUI()
         
-        // 🔍 Debug: 印出當前Stage資訊
+        // Debug: 印出當前Stage資訊
         stageManager.printCurrentStageInfo()
-        print("🔍 AddTodoViewController: viewDidLoad 完成")
+        print("AddTodoViewController: viewDidLoad 完成")
     }
     
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
-        print("🔍 AddTodoViewController: viewWillAppear 開始")
+        print("AddTodoViewController: viewWillAppear 開始")
         
         // 每次出現時更新Stage相關UI (以防ServiceContainer被更改)
         updateStageRelatedUI()
         
-        print("🔍 AddTodoViewController: viewWillAppear 完成")
+        print("AddTodoViewController: viewWillAppear 完成")
     }
     
     // MARK: - 設置方法
     
     private func setupViewModel() {
-        print("🔍 開始設置AddTodoViewModel（透過ServiceContainer）")
+        print("開始設置AddTodoViewModel（透過ServiceContainer）")
         
-        // 🎯 關鍵改變：透過 ServiceContainer 創建 ViewModel
+        // 關鍵改變：透過 ServiceContainer 創建 ViewModel
         viewModel = ServiceContainer.shared.createAddTodoViewModel()
         
-        print("✅ AddTodoViewModel創建完成：\(type(of: viewModel))")
+        print("AddTodoViewModel創建完成：\(type(of: viewModel))")
         
-        // 🔍 印出容器配置資訊
+        // 印出容器配置資訊
         if ServiceContainer.shared.usesCombineFramework() {
-            print("🚀 當前使用 Combine 架構")
+            print("當前使用 Combine 架構")
         } else {
             print("🔧 當前使用 UIKit 架構")
         }
@@ -116,7 +116,7 @@ class AddTodoViewController: UIViewController {
         
         // 新增按鈕
         addButton.translatesAutoresizingMaskIntoConstraints = false
-        addButton.setTitle("📝 新增Todo", for: .normal)
+        addButton.setTitle("新增Todo", for: .normal)
         addButton.titleLabel?.font = .systemFont(ofSize: 18, weight: .medium)
         addButton.backgroundColor = .systemBlue
         addButton.setTitleColor(.white, for: .normal)
@@ -163,7 +163,7 @@ class AddTodoViewController: UIViewController {
     }
     
     private func updateNavigationBar() {
-        // 🎯 使用 ServiceContainer 的工具方法獲取完整資訊
+        // 使用 ServiceContainer 的工具方法獲取完整資訊
         let stage = ServiceContainer.shared.getCurrentStageInfo()
         let usesCombine = ServiceContainer.shared.usesCombineFramework()
         
@@ -186,7 +186,7 @@ class AddTodoViewController: UIViewController {
     }
     
     private func updateStageRelatedUI() {
-        print("🔄 更新Stage相關UI")
+        print("更新Stage相關UI")
         
         // 更新說明文字
         instructionLabel.text = stageManager.getStageInstruction(for: currentStage)
@@ -197,7 +197,7 @@ class AddTodoViewController: UIViewController {
         // 更新按鈕樣式 (根據架構類型和Stage特性)
         updateButtonStyle()
         
-        print("✅ Stage相關UI更新完成")
+        print("Stage相關UI更新完成")
     }
     
     private func updateButtonStyle() {
@@ -207,25 +207,25 @@ class AddTodoViewController: UIViewController {
         if usesCombine {
             // Combine 架構：響應式風格
             addButton.backgroundColor = .systemPurple
-            addButton.setTitle("🚀 響應式新增", for: .normal)
-            print("🎨 設置響應式按鈕樣式")
+            addButton.setTitle("響應式新增", for: .normal)
+            print("設置響應式按鈕樣式")
         } else {
             switch syncCapability {
             case .automatic:
                 // Stage4-6: 自動同步風格
                 addButton.backgroundColor = .systemGreen
-                addButton.setTitle("✅ 自動新增", for: .normal)
-                print("🎨 設置自動同步按鈕樣式")
+                addButton.setTitle("自動新增", for: .normal)
+                print("設置自動同步按鈕樣式")
             case .manual:
                 // Stage1-3: 基礎風格
                 addButton.backgroundColor = .systemBlue
-                addButton.setTitle("📝 新增Todo", for: .normal)
-                print("🎨 設置手動同步按鈕樣式")
+                addButton.setTitle("新增Todo", for: .normal)
+                print("設置手動同步按鈕樣式")
             default:
                 // 預設風格
                 addButton.backgroundColor = .systemBlue
-                addButton.setTitle("📝 新增Todo", for: .normal)
-                print("🎨 設置預設按鈕樣式")
+                addButton.setTitle("新增Todo", for: .normal)
+                print("設置預設按鈕樣式")
             }
         }
     }
@@ -267,19 +267,19 @@ class AddTodoViewController: UIViewController {
     }
     
     @objc private func addButtonTapped() {
-        print("🔍 addButtonTapped 被調用！") 
+        print("addButtonTapped 被調用！") 
         guard let title = textField.text?.trimmingCharacters(in: .whitespacesAndNewlines),
               !title.isEmpty else {
-            print("⚠️ 嘗試新增空白Todo，已忽略")
+            print("嘗試新增空白Todo，已忽略")
             return
         }
         
-        print("📝 準備新增Todo: \(title)")
+        print("準備新增Todo: \(title)")
         
-        // 🎯 新增前的Stage特定處理
+        // 新增前的Stage特定處理
         handlePreAddAction(for: currentStage, todoTitle: title)
         
-        // 🎯 透過 ViewModel 新增 Todo
+        // 透過 ViewModel 新增 Todo
         viewModel.addTodo(title: title)
         
         // 清空輸入框
@@ -287,14 +287,14 @@ class AddTodoViewController: UIViewController {
         textFieldDidChange()
         textField.resignFirstResponder()
         
-        // 🎯 新增後的Stage特定處理
+        // 新增後的Stage特定處理
         handlePostAddAction(for: currentStage, todoTitle: title)
         
-        print("✅ Todo新增完成，體驗\(currentStage.displayName)的同步效果")
+        print("Todo新增完成，體驗\(currentStage.displayName)的同步效果")
     }
     
     @objc private func stageInfoTapped() {
-        // 🎯 顯示當前Stage的詳細資訊
+        // 顯示當前Stage的詳細資訊
         showStageInfoAlert()
     }
     
@@ -304,17 +304,17 @@ class AddTodoViewController: UIViewController {
         let usesCombine = ServiceContainer.shared.usesCombineFramework()
         
         if usesCombine {
-            print("🚀 \(stage.displayName): 準備響應式新增 - \(todoTitle)")
+            print("\(stage.displayName): 準備響應式新增 - \(todoTitle)")
         } else {
             switch stage.syncCapability {
             case .automatic:
-                print("✅ \(stage.displayName): 準備自動同步新增 - \(todoTitle)")
+                print("\(stage.displayName): 準備自動同步新增 - \(todoTitle)")
             case .manual:
-                print("🔄 \(stage.displayName): 準備手動同步新增 - \(todoTitle)")
+                print("\(stage.displayName): 準備手動同步新增 - \(todoTitle)")
             case .reactive:
-                print("🚀 \(stage.displayName): 準備響應式新增 - \(todoTitle)")
+                print("\(stage.displayName): 準備響應式新增 - \(todoTitle)")
             case .none:
-                print("❌ \(stage.displayName): 無同步能力新增 - \(todoTitle)")
+                print("\(stage.displayName): 無同步能力新增 - \(todoTitle)")
             }
         }
     }
@@ -324,9 +324,9 @@ class AddTodoViewController: UIViewController {
         let usesCombine = ServiceContainer.shared.usesCombineFramework()
         let architecture = usesCombine ? "Combine" : "UIKit"
         
-        print("📝 \(stage.displayName) (\(architecture)): 新增「\(todoTitle)」完成，\(badgeStatus)")
+        print("\(stage.displayName) (\(architecture)): 新增「\(todoTitle)」完成，\(badgeStatus)")
         
-        // 🎯 根據Stage特性給出不同的視覺反饋
+        // 根據Stage特性給出不同的視覺反饋
         let feedbackMessage = generateFeedbackMessage(for: stage, usesCombine: usesCombine)
         
         if !stage.badgeSupported {
@@ -334,23 +334,23 @@ class AddTodoViewController: UIViewController {
             showTemporaryFeedback(feedbackMessage)
         } else {
             // Stage4+: 簡短確認
-            showTemporaryFeedback("✅ 新增成功！\(usesCombine ? "響應式" : "自動")同步中...")
+            showTemporaryFeedback("新增成功！\(usesCombine ? "響應式" : "自動")同步中...")
         }
     }
     
     private func generateFeedbackMessage(for stage: TodoDataStage, usesCombine: Bool) -> String {
         if usesCombine {
-            return "🚀 新增成功！響應式同步到Todo清單，Badge即時更新"
+            return "新增成功！響應式同步到Todo清單，Badge即時更新"
         } else {
             switch stage.syncCapability {
             case .automatic:
-                return "✅ 新增成功！自動同步到Todo清單，Badge即時更新"
+                return "新增成功！自動同步到Todo清單，Badge即時更新"
             case .manual:
-                return "📝 新增完成，請手動切換到Todo清單查看，Badge不會更新"
+                return "新增完成，請手動切換到Todo清單查看，Badge不會更新"
             case .reactive:
-                return "🚀 新增成功！響應式同步中..."
+                return "新增成功！響應式同步中..."
             case .none:
-                return "📝 新增完成，請手動檢查Todo清單"
+                return "新增完成，請手動檢查Todo清單"
             }
         }
     }
@@ -418,10 +418,10 @@ class AddTodoViewController: UIViewController {
         let alert = UIAlertController(
             title: "➕ 新增Todo頁面",
             message: """
-            🎯 當前Stage: \(stage.fullDescription)
-            🎨 架構類型: \(architecture) \(usesCombine ? "🚀" : "🔧")
+            當前Stage: \(stage.fullDescription)
+            架構類型: \(architecture) \(usesCombine ? "🚀" : "🔧")
             \(stage.badgeDescription)
-            🔄 同步能力: \(stage.syncCapability.rawValue) \(stage.syncCapability.emoji)
+            同步能力: \(stage.syncCapability.rawValue) \(stage.syncCapability.emoji)
             
             在此頁面新增Todo後：
             \(generateStageExplanation(for: stage, usesCombine: usesCombine))
@@ -494,13 +494,13 @@ class AddTodoViewController: UIViewController {
     // MARK: - 清理
     deinit {
         NotificationCenter.default.removeObserver(self)
-        print("🧹 AddTodoViewController: 清理完成")
+        print("AddTodoViewController: 清理完成")
     }
 }
 
 // MARK: - AddTodoViewController 重構說明
 /*
-🎯 重構重點：
+重構重點：
 
 1. **統一創建方式**：
    - 透過 ServiceContainer.createAddTodoViewModel() 創建
@@ -527,7 +527,7 @@ class AddTodoViewController: UIViewController {
    - 使用 ServiceContainer 的所有工具方法
    - 支援 UIKit 和 Combine 兩種架構
 
-✅ 重構效果：
+重構效果：
 - UI 智能適配不同 Stage 和架構
 - 提供更豐富的用戶回饋
 - 保持完整的學習體驗
@@ -545,7 +545,7 @@ class AddTodoViewController: UIViewController {
 - 完整的 Stage 說明展示
 - 容器配置即時查看
 
-🎨 視覺設計：
+視覺設計：
 - Stage 1-3: 藍色按鈕，手動同步提示
 - Stage 4-6: 綠色按鈕，自動同步確認
 - Stage 7+: 紫色按鈕，響應式特色

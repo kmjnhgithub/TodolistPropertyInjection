@@ -8,12 +8,12 @@
 import UIKit
 
 // MARK: - TodoList ViewController (統一接口版)
-// 🎯 使用統一的 TodoListViewModelProtocol 接口
+// 使用統一的 TodoListViewModelProtocol 接口
 // 自動適配 UIKit (Stage 1-6) 和 Combine (Stage 7+) 版本
 
 class TodoListViewController: UIViewController {
     
-    // 🎯 關鍵改變：使用 Protocol 而非具體類型
+    // 關鍵改變：使用 Protocol 而非具體類型
     private var viewModel: TodoListViewModelProtocol!
     private var tableView: UITableView!
     
@@ -25,44 +25,44 @@ class TodoListViewController: UIViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        print("🔍 TodoListViewController: viewDidLoad 開始")
+        print("TodoListViewController: viewDidLoad 開始")
         setupViewModel()
         setupUI()
         setupBadgeObservation()
-        print("🔍 TodoListViewController: viewDidLoad 完成")
+        print("TodoListViewController: viewDidLoad 完成")
     }
     
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
-        print("🔍 TodoListViewController: viewWillAppear 開始")
+        print("TodoListViewController: viewWillAppear 開始")
         
-        // 🎯 手動刷新資料（保持各 Stage 的行為一致性）
+        // 手動刷新資料（保持各 Stage 的行為一致性）
         tableView.reloadData()
-        print("🔄 手動刷新TodoList資料")
+        print("手動刷新TodoList資料")
         
-        // 🎯 Badge處理：當用戶查看清單時清除Badge（只有支援Badge的Stage）
+        // Badge處理：當用戶查看清單時清除Badge（只有支援Badge的Stage）
         if currentStage.badgeSupported {
             viewModel.markBadgeAsViewed()
-            print("👁️ 用戶查看清單，清除Badge")
+            print("用戶查看清單，清除Badge")
         } else {
-            print("🔍 \(currentStage.displayName) 不支援Badge，跳過清除")
+            print("\(currentStage.displayName) 不支援Badge，跳過清除")
         }
         
-        print("🔍 TodoListViewController: viewWillAppear 完成")
+        print("TodoListViewController: viewWillAppear 完成")
     }
     
     // MARK: - 設置方法
     
     private func setupViewModel() {
-        print("🔍 開始設置ViewModel（透過ServiceContainer）")
+        print("開始設置ViewModel（透過ServiceContainer）")
         
-        // 🎯 關鍵改變：透過 ServiceContainer 自動選擇正確的 ViewModel
+        // 關鍵改變：透過 ServiceContainer 自動選擇正確的 ViewModel
         viewModel = ServiceContainer.shared.createTodoListViewModel()
         
-        // 🔍 除錯：印出實際創建的 ViewModel 類型
-        print("✅ ViewModel創建完成：\(type(of: viewModel))")
+        // 除錯：印出實際創建的 ViewModel 類型
+        print("ViewModel創建完成：\(type(of: viewModel))")
         
-        // 🔍 印出當前容器配置
+        // 印出當前容器配置
         ServiceContainer.shared.printContainerInfo()
     }
     
@@ -92,7 +92,7 @@ class TodoListViewController: UIViewController {
     }
     
     private func setupNavigationBar() {
-        // 🎯 使用 ServiceContainer 的工具方法
+        // 使用 ServiceContainer 的工具方法
         let stage = ServiceContainer.shared.getCurrentStageInfo()
         let usesCombine = ServiceContainer.shared.usesCombineFramework()
         
@@ -111,58 +111,58 @@ class TodoListViewController: UIViewController {
     // MARK: - Badge觀察設置（統一接口版）
     
     private func setupBadgeObservation() {
-        print("🔍 開始設置Badge觀察（統一接口）")
+        print("開始設置Badge觀察（統一接口）")
         
-        // 🎯 只有支援Badge的Stage才設置觀察
+        // 只有支援Badge的Stage才設置觀察
         guard currentStage.badgeSupported else {
-            print("🔍 \(currentStage.displayName) 不支援Badge，跳過設置")
+            print("\(currentStage.displayName) 不支援Badge，跳過設置")
             return
         }
         
-        // 🎯 關鍵改變：使用統一的回調接口，不管底層是UIKit還是Combine
+        // 關鍵改變：使用統一的回調接口，不管底層是UIKit還是Combine
         viewModel.badgeUpdateHandler = { [weak self] badgeCount in
-            print("🔍 收到Badge更新回調: \(badgeCount)")
+            print("收到Badge更新回調: \(badgeCount)")
             self?.updateTabBarBadge(count: badgeCount)
         }
         
-        print("✅ TodoListViewController: Badge觀察已設置（統一接口）")
+        print("TodoListViewController: Badge觀察已設置（統一接口）")
     }
     
     private func updateTabBarBadge(count: Int) {
-        print("🔍 準備更新TabBar Badge: \(count)")
+        print("準備更新TabBar Badge: \(count)")
         
-        // 🎯 確保只有支援Badge的Stage才更新
+        // 確保只有支援Badge的Stage才更新
         guard currentStage.badgeSupported else {
-            print("🔍 \(currentStage.displayName) 不支援Badge，跳過更新")
+            print("\(currentStage.displayName) 不支援Badge，跳過更新")
             return
         }
         
-        // 🎯 更新TabBar的Badge
+        // 更新TabBar的Badge
         DispatchQueue.main.async { [weak self] in
-            print("🔍 在主線程更新Badge")
+            print("在主線程更新Badge")
             
             guard let self = self,
                   let tabBarController = self.tabBarController,
                   let tabBarItems = tabBarController.tabBar.items,
                   !tabBarItems.isEmpty else {
-                print("⚠️ TabBar相關組件不可用")
+                print("TabBar相關組件不可用")
                 return
             }
             
             if count > 0 {
                 tabBarItems[0].badgeValue = "\(count)"
                 tabBarItems[0].badgeColor = .systemRed
-                print("🔴 TabBar Badge已設置: \(count)")
+                print("TabBar Badge已設置: \(count)")
             } else {
                 tabBarItems[0].badgeValue = nil
-                print("🔴 TabBar Badge已清除")
+                print("TabBar Badge已清除")
             }
             
-            // 🔍 驗證Badge是否真的設置了
+            // 驗證Badge是否真的設置了
             if let badgeValue = tabBarItems[0].badgeValue {
-                print("✅ Badge驗證成功: \(badgeValue)")
+                print("Badge驗證成功: \(badgeValue)")
             } else {
-                print("✅ Badge驗證成功: 已清除")
+                print("Badge驗證成功: 已清除")
             }
         }
     }
@@ -170,7 +170,7 @@ class TodoListViewController: UIViewController {
     // MARK: - 事件處理
     
     @objc private func stageInfoTapped() {
-        // 🎯 顯示當前Stage的詳細資訊
+        // 顯示當前Stage的詳細資訊
         showStageInfoAlert()
     }
     
@@ -182,9 +182,9 @@ class TodoListViewController: UIViewController {
         let alert = UIAlertController(
             title: "\(stage.fullDescription)",
             message: """
-            🎨 ViewModel: \(vmType) 版本
+            ViewModel: \(vmType) 版本
             \(stage.badgeDescription)
-            🔄 同步能力: \(stage.syncCapability.rawValue) \(stage.syncCapability.emoji)
+            同步能力: \(stage.syncCapability.rawValue) \(stage.syncCapability.emoji)
             
             點擊「查看說明」了解更多詳情
             """,
@@ -238,7 +238,7 @@ class TodoListViewController: UIViewController {
     
     // MARK: - 清理
     deinit {
-        print("🧹 TodoListViewController: 清理完成")
+        print("TodoListViewController: 清理完成")
     }
 }
 
@@ -260,7 +260,7 @@ extension TodoListViewController: UITableViewDataSource, UITableViewDelegate {
         
         let todo = viewModel.getTodo(at: indexPath.row)
         
-        // 🎯 使用 ServiceContainer 創建 DetailViewController 的 ViewModel
+        // 使用 ServiceContainer 創建 DetailViewController 的 ViewModel
         let detailVC = TodoDetailViewController()
         detailVC.todoUUID = todo.uuid
         
@@ -270,9 +270,9 @@ extension TodoListViewController: UITableViewDataSource, UITableViewDelegate {
     func tableView(_ tableView: UITableView, commit editingStyle: UITableViewCell.EditingStyle, forRowAt indexPath: IndexPath) {
         if editingStyle == .delete {
             viewModel.deleteTodo(at: indexPath.row)
-            // 🎯 需要手動更新UI
+            // 需要手動更新UI
             tableView.deleteRows(at: [indexPath], with: .fade)
-            print("🗑️ 手動刪除TableView列")
+            print("手動刪除TableView列")
         }
     }
     
@@ -283,7 +283,7 @@ extension TodoListViewController: UITableViewDataSource, UITableViewDelegate {
 
 // MARK: - ViewController 重構說明
 /*
-🎯 重構重點：
+重構重點：
 
 1. **統一接口使用**：
    - 從具體的 TodoListViewModel 改為 TodoListViewModelProtocol
@@ -315,7 +315,7 @@ extension TodoListViewController: UITableViewDataSource, UITableViewDelegate {
    - 不需要條件判斷 Stage 類型
    - 統一的接口讓程式碼更清晰
 
-✅ 重構效果：
+重構效果：
 - ViewController 程式碼更簡潔
 - 自動適配不同 Stage 的架構
 - 保持完整的學習體驗

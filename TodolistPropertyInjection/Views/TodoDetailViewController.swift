@@ -16,7 +16,7 @@
 import UIKit
 
 // MARK: - TodoDetail ViewController (ServiceContainer版)
-// 🎯 使用 ServiceContainer 統一創建 ViewModel
+// 使用 ServiceContainer 統一創建 ViewModel
 // 確保與整體架構的一致性
 
 class TodoDetailViewController: UIViewController {
@@ -39,34 +39,34 @@ class TodoDetailViewController: UIViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        print("🔍 TodoDetailViewController: viewDidLoad 開始")
+        print("TodoDetailViewController: viewDidLoad 開始")
         setupViewModel()
         setupUI()
         updateUI()
-        print("🔍 TodoDetailViewController: viewDidLoad 完成")
+        print("TodoDetailViewController: viewDidLoad 完成")
     }
     
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
-        print("🔍 TodoDetailViewController: viewWillAppear 開始")
+        print("TodoDetailViewController: viewWillAppear 開始")
         
-        // 🎯 各Stage都需要手動刷新資料
+        // 各Stage都需要手動刷新資料
         updateUI()
-        print("🔄 \(currentStage.displayName): 手動刷新TodoDetail資料")
+        print("\(currentStage.displayName): 手動刷新TodoDetail資料")
         
-        print("🔍 TodoDetailViewController: viewWillAppear 完成")
+        print("TodoDetailViewController: viewWillAppear 完成")
     }
     
     // MARK: - 設置方法
     
     private func setupViewModel() {
-        print("🔍 開始設置TodoDetailViewModel（透過ServiceContainer）")
+        print("開始設置TodoDetailViewModel（透過ServiceContainer）")
         
-        // 🎯 關鍵改變：透過 ServiceContainer 創建 ViewModel
+        // 關鍵改變：透過 ServiceContainer 創建 ViewModel
         viewModel = ServiceContainer.shared.createTodoDetailViewModel(todoUUID: todoUUID)
         
-        print("✅ TodoDetailViewModel創建完成：\(type(of: viewModel))")
-        print("🔍 管理的Todo UUID: \(todoUUID ?? "nil")")
+        print("TodoDetailViewModel創建完成：\(type(of: viewModel))")
+        print("管理的Todo UUID: \(todoUUID ?? "nil")")
     }
     
     private func setupUI() {
@@ -132,7 +132,7 @@ class TodoDetailViewController: UIViewController {
         
         // 刪除按鈕
         deleteButton.translatesAutoresizingMaskIntoConstraints = false
-        deleteButton.setTitle("🗑️ 刪除Todo", for: .normal)
+        deleteButton.setTitle("刪除Todo", for: .normal)
         deleteButton.titleLabel?.font = .systemFont(ofSize: 18, weight: .medium)
         deleteButton.backgroundColor = .systemRed
         deleteButton.setTitleColor(.white, for: .normal)
@@ -168,7 +168,7 @@ class TodoDetailViewController: UIViewController {
     }
     
     private func setupNavigationBar() {
-        // 🎯 使用 ServiceContainer 的工具方法獲取 Stage 資訊
+        // 使用 ServiceContainer 的工具方法獲取 Stage 資訊
         let stage = ServiceContainer.shared.getCurrentStageInfo()
         let usesCombine = ServiceContainer.shared.usesCombineFramework()
         
@@ -194,17 +194,17 @@ class TodoDetailViewController: UIViewController {
     // MARK: - UI 更新
     
     private func updateUI() {
-        print("🔍 TodoDetailViewController: 開始更新UI")
+        print("TodoDetailViewController: 開始更新UI")
         
         guard let todo = viewModel.todo else {
-            print("⚠️ Todo已被刪除，返回上一頁")
+            print("Todo已被刪除，返回上一頁")
             // Todo已被刪除，返回上一頁
             navigationController?.popViewController(animated: true)
             return
         }
         
         titleLabel.text = todo.title
-        statusLabel.text = todo.isCompleted ? "✅ 已完成" : "⏳ 待完成"
+        statusLabel.text = todo.isCompleted ? "已完成" : "⏳ 待完成"
         statusLabel.textColor = todo.isCompleted ? .systemGreen : .systemOrange
         uuidLabel.text = "UUID: \(todo.uuid)"
         
@@ -212,27 +212,27 @@ class TodoDetailViewController: UIViewController {
         toggleButton.setTitle(toggleTitle, for: .normal)
         toggleButton.backgroundColor = todo.isCompleted ? .systemOrange : .systemGreen
         
-        print("✅ TodoDetailViewController: UI更新完成")
-        print("📝 Todo資訊: \(todo.title) - \(todo.isCompleted ? "已完成" : "待完成")")
+        print("TodoDetailViewController: UI更新完成")
+        print("Todo資訊: \(todo.title) - \(todo.isCompleted ? "已完成" : "待完成")")
     }
     
     // MARK: - 事件處理
     
     @objc private func toggleButtonTapped() {
-        print("🔄 切換Todo完成狀態")
+        print("切換Todo完成狀態")
         
         viewModel.toggleCompletion()
         
-        // 🎯 各Stage都需要手動更新UI
+        // 各Stage都需要手動更新UI
         updateUI()
-        print("🔄 \(currentStage.displayName): 手動更新完成狀態UI")
+        print("\(currentStage.displayName): 手動更新完成狀態UI")
         
-        // 🎯 提供視覺回饋
+        // 提供視覺回饋
         provideFeedbackForToggle()
     }
     
     @objc private func deleteButtonTapped() {
-        print("🗑️ 準備刪除Todo")
+        print("準備刪除Todo")
         
         let alert = UIAlertController(
             title: "確認刪除",
@@ -241,7 +241,7 @@ class TodoDetailViewController: UIViewController {
         )
         
         alert.addAction(UIAlertAction(title: "取消", style: .cancel) { _ in
-            print("❌ 用戶取消刪除")
+            print("用戶取消刪除")
         })
         
         alert.addAction(UIAlertAction(title: "刪除", style: .destructive) { [weak self] _ in
@@ -252,27 +252,27 @@ class TodoDetailViewController: UIViewController {
     }
     
     @objc private func stageInfoTapped() {
-        // 🎯 顯示當前Stage的詳細資訊
+        // 顯示當前Stage的詳細資訊
         showStageInfoAlert()
     }
     
     // MARK: - 輔助方法
     
     private func performDelete() {
-        print("🗑️ 執行刪除操作")
+        print("執行刪除操作")
         
         viewModel.deleteTodo()
         
-        // 🎯 各Stage刪除後都需要手動返回
+        // 各Stage刪除後都需要手動返回
         navigationController?.popViewController(animated: true)
-        print("🗑️ \(currentStage.displayName): 刪除後手動返回上一頁")
+        print("\(currentStage.displayName): 刪除後手動返回上一頁")
         
-        // 🎯 提供視覺回饋
+        // 提供視覺回饋
         provideFeedbackForDelete()
     }
     
     private func provideFeedbackForToggle() {
-        // 🎯 根據Stage特性提供不同的回饋
+        // 根據Stage特性提供不同的回饋
         let message: String
         switch currentStage.syncCapability {
         case .reactive:
@@ -310,11 +310,11 @@ class TodoDetailViewController: UIViewController {
         let usesCombine = ServiceContainer.shared.usesCombineFramework()
         
         let alert = UIAlertController(
-            title: "📝 Todo詳情頁面",
+            title: "Todo詳情頁面",
             message: """
-            🎯 當前Stage: \(stage.fullDescription)
-            🎨 架構: \(usesCombine ? "Combine" : "UIKit")
-            🔄 同步能力: \(stage.syncCapability.rawValue) \(stage.syncCapability.emoji)
+            當前Stage: \(stage.fullDescription)
+            架構: \(usesCombine ? "Combine" : "UIKit")
+            同步能力: \(stage.syncCapability.rawValue) \(stage.syncCapability.emoji)
             
             在此頁面可以：
             • 檢視Todo詳細資訊
@@ -331,13 +331,13 @@ class TodoDetailViewController: UIViewController {
     
     // MARK: - 清理
     deinit {
-        print("🧹 TodoDetailViewController: 清理完成")
+        print("TodoDetailViewController: 清理完成")
     }
 }
 
 // MARK: - TodoDetailViewController 重構說明
 /*
-🎯 重構重點：
+重構重點：
 
 1. **統一創建方式**：
    - 透過 ServiceContainer.createTodoDetailViewModel() 創建
@@ -364,7 +364,7 @@ class TodoDetailViewController: UIViewController {
    - 根據 Stage 特性調整 UI 顏色
    - 清晰的 Stage 資訊展示
 
-✅ 重構效果：
+重構效果：
 - 與整體架構更好的整合
 - 保持各 Stage 的學習特性
 - 提供更好的用戶回饋
@@ -376,7 +376,7 @@ class TodoDetailViewController: UIViewController {
 - 感受統一架構的好處
 - 掌握 Stage 特性的正確展示方式
 
-⚠️ 注意事項：
+注意事項：
 - TodoDetailViewModel 本身不需要分版本
 - 主要差異在於 DataService 的行為
 - UI 更新邏輯保持各 Stage 的一致性

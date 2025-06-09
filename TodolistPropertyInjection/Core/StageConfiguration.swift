@@ -161,7 +161,7 @@ struct StageInstructionProvider {
 // MARK: - Stage說明文字常量 (安全的全域資料)
 private struct StageInstructions {
     static let stage1 = """
-    🎯 Stage1: Property直接傳遞
+    Stage1: Property直接傳遞
     
     特點：
     • 簡單直接的資料傳遞方式
@@ -175,7 +175,7 @@ private struct StageInstructions {
     """
     
     static let stage2 = """
-    🎯 Stage2: Delegate委託模式
+    Stage2: Delegate委託模式
     
     特點：
     • 展示一對一委託關係概念
@@ -188,7 +188,7 @@ private struct StageInstructions {
     """
     
     static let stage3 = """
-    🎯 Stage3: Closure回調機制
+    Stage3: Closure回調機制
     
     特點：
     • 展示回調函數的使用方式
@@ -201,7 +201,7 @@ private struct StageInstructions {
     """
     
     static let stage4 = """
-    🎯 Stage4: NotificationCenter通知
+    Stage4: NotificationCenter通知
     
     特點：
     • 第一個實現真正UI自動更新的階段
@@ -214,7 +214,7 @@ private struct StageInstructions {
     """
     
     static let stage5 = """
-    🎯 Stage5: Singleton全域狀態
+    Stage5: Singleton全域狀態
     
     特點：
     • 全域唯一實例管理
@@ -227,7 +227,7 @@ private struct StageInstructions {
     """
     
     static let stage6 = """
-    🎯 Stage6: UserDefaults持久化
+    Stage6: UserDefaults持久化
     
     特點：
     • App重啟後資料仍然存在
@@ -240,7 +240,7 @@ private struct StageInstructions {
     """
     
     static let stage7 = """
-    🎯 Stage7: Combine響應式框架
+    Stage7: Combine響應式框架
     
     特點：
     • 現代化響應式程式設計
@@ -255,7 +255,7 @@ private struct StageInstructions {
     """
     
     static let stage8 = """
-    🎯 Stage8: Core Data + MVVM
+    Stage8: Core Data + MVVM
     
     特點：
     • 企業級資料管理解決方案
@@ -270,7 +270,7 @@ private struct StageInstructions {
     """
     
     static let unknown = """
-    🎯 Unknown Stage
+    Unknown Stage
     
     請確認ServiceContainer中的DataService設定
     或檢查是否有新的Stage尚未配置。
@@ -280,14 +280,14 @@ private struct StageInstructions {
 // MARK: - 便利擴展
 extension TodoDataStage {
     var fullDescription: String {
-        return "🎯 \(displayName): \(title) \(complexity)"
+        return "\(displayName): \(title) \(complexity)"
     }
     
     var badgeDescription: String {
         if badgeSupported {
             return "\(syncCapability.emoji) Badge支援: ✅"
         } else {
-            return "🔴 Badge支援: ❌"
+            return "Badge支援: ❌"
         }
     }
 }
@@ -297,7 +297,7 @@ extension StageConfigurationManager {
     func printCurrentStageInfo() {
         let stage = getCurrentStage()
         print("""
-        📋 當前Stage資訊:
+        當前Stage資訊:
         ==================
         \(stage.fullDescription)
         \(stage.badgeDescription)

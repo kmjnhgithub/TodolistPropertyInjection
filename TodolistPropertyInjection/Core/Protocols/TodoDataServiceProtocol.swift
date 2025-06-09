@@ -5,7 +5,7 @@
 //  Created by mike liu on 2025/6/2.
 //
 
-// MARK: - TodoDataService Protocol (Badge增強版)
+// MARK: - TodoDataService Protocol (資料層,接收完整的Todo物件)
 protocol TodoDataServiceProtocol {
     func getAllTodos() -> [Todo]
     func addTodo(_ todo: Todo)
@@ -16,7 +16,7 @@ protocol TodoDataServiceProtocol {
     func setupDataBinding(for viewModel: Any)
     func cleanup()
     
-    // 🎯 新增：Badge支援接口
+    // 新增：Badge支援接口
     func setBadgeUpdateCallback(_ callback: @escaping (Int) -> Void)
     func clearBadge()
 }

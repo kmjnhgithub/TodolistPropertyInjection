@@ -5,8 +5,8 @@
 //  Created by mike liu on 2025/6/5.
 //
 
-// MARK: - TodoListViewModel 統一接口
-// 🎯 這個接口讓 Stage 1-6 (UIKit) 和 Stage 7+ (Combine) 可以無縫切換
+// MARK: - TodoListViewModel 統一接口(業務邏輯層)
+// 這個接口讓 Stage 1-6 (UIKit) 和 Stage 7+ (Combine) 可以無縫切換
 // 同時保持 ViewController 程式碼的一致性
 
 import Foundation
@@ -57,7 +57,7 @@ protocol TodoListViewModelProtocol: AnyObject {
 
 // MARK: - Protocol 設計說明
 /*
-🎯 設計原則：
+設計原則：
 
 1. **統一接口**：
    - Stage 1-6 使用 UIKit 版本實作
@@ -79,7 +79,7 @@ protocol TodoListViewModelProtocol: AnyObject {
    - 不影響現有的 ViewController 程式碼
    - 保持向後兼容性
 
-⚠️ 注意事項：
+注意事項：
 - 所有方法都必須在兩個實作版本中保持一致
 - Badge 回調必須在主線程執行
 - 記憶體管理要特別注意 weak reference
